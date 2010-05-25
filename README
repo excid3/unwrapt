@@ -1,0 +1,7 @@
+Installation
+------------
+
+These instructions are for Ubuntu users
+
+sudo apt-get install python-virtualenv
+virtualenv

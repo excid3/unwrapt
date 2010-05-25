@@ -1,7 +1,23 @@
 Installation
 ------------
 
-These instructions are for Ubuntu users
+These instructions are for Ubuntu users.
 
-sudo apt-get install python-virtualenv
-virtualenv
+Clone the repository:
+$ git clone git://github.com/excid3/unwrapt.git
+
+Install the setup utilities:
+$ sudo apt-get install python-virtualenv python-pip
+
+Change into the directory to work:
+$ cd unwrapt/
+
+Setup and enable the virtual environment:
+$ virtualenv --no-site-packages --distribute .
+$ source bin/activate
+
+Install the dependencies:
+$ pip install -r requirements.txt
+
+When you are finished working you can exit the virtual environment:
+$ deactivate

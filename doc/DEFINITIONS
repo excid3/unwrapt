@@ -1,0 +1,6 @@
+Definition Structure and Rules
+------------------------------
+
+Each definition should store project data into a database. Tables should be prefixed with the definition's name (for example "apt_packages"). This provides flexibility in the library's usage. Each definition could store to the same or separate databases without conflicting.
+
+

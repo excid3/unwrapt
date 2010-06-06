@@ -1,3 +1,5 @@
-from DefinitionLoader import DefinitionLoader
+from DefinitionManager import DefinitionManager
 
-loader = DefinitionLoader("definitions")
+loader = DefinitionManager("definitions")
+apt = loader.new_instance("apt")
+apt.SetArchitecture("i386")

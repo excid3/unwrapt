@@ -8,7 +8,7 @@ def callback(func):
         # Call callback if available
         name = "on_%s" % func.__name__
         if hasattr(args[0], name):
-            getattr(args[0], name)(*args[1:], **kwargs)
+            return getattr(args[0], name)(*args[1:], **kwargs)
 
 
     return callback_func

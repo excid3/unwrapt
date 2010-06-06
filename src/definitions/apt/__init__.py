@@ -8,5 +8,6 @@ info = {"name"   : "apt",
 
                 
 class Apt(DefinitionBase):
-    def OnSetArchitecture(self, architecture):
+
+    def on_set_architecture(self, architecture):
         print architecture

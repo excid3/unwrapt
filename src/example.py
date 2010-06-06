@@ -2,6 +2,7 @@ import os
 
 from DefinitionManager import DefinitionManager
 
+
 # Make sure this works being launched from any location
 __path__ = os.path.dirname(os.path.abspath(__file__))
 folder = "%s/definitions" % __path__
@@ -13,4 +14,4 @@ loader = DefinitionManager(folder)
 apt = loader.new_instance("apt")
 
 # Configure the apt client
-apt.SetArchitecture("i386")
+apt.set_architecture("i386")

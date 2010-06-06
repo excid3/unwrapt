@@ -9,6 +9,7 @@ class DefinitionManager:
     Loads the definitions from a folder and manages them
     """
 
+
     definitions = {}
 
     
@@ -42,4 +43,5 @@ class DefinitionManager:
         """Creates a new instance of a definition"""
         definition = self.definitions[name]
         return getattr(definition, definition.info["class"])("FAKE DB INFORMATION")
+        
         

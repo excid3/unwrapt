@@ -1,6 +1,35 @@
 Definition Structure and Rules
-------------------------------
+==============================
+
+Each definition must be it's own Python module. This mean it is stored in the "definitions" folder and must include an __init__.py file containing the definition info and class data structures.
+
+Definition Info
+---------------
+
+Example Definition info implementation:
+
+    info = {"name"   : "apt",
+            "author" : "Chris Oliver <excid3@gmail.com>",
+            "version": "1.0",
+            "class"  : "Apt"}
+
+
+Definition Class
+----------------
+
+Example definition class implementation (does nothing):
+
+    from DefinitionBase import DefinitionBase
+    
+    class Apt(DefinitionBase):
+        pass
+
+Note that here the class name "Apt" matches the "class" value in the definition info. This is how the DefinitionManager knows which class to import.
+
+You must inherit from DefinitionBase in order to ensure that the default empty functions are created. These are placeholders and behind the scenes tools so that Definitions do not need to fully implement every feature.
 
 Each definition should store project data into a database. Tables should be prefixed with the definition's name (for example "apt_packages"). This provides flexibility in the library's usage. Each definition could store to the same or separate databases without conflicting.
+
+It is NOT recommended for definitions to override any of the base class's functions. Each of the functions in DefinitionBase are decorated with @callback. This decorator attempts to call "on_<function name>" of the Definition. These are the methods that should be used when implementing a Definition and they will be given the same parameters as the DefinitionBase function call. See src/definitions/apt for an example implementation.
 
 

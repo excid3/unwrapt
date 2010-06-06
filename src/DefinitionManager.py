@@ -1,6 +1,6 @@
-import imp
 import logging
 import os
+import sys
 
 
 class DefinitionManager:
@@ -22,28 +22,21 @@ class DefinitionManager:
             logging.error("Unable to load plugins because '%s' is not a folder" % folder)
             return
         
-        # Build list of py files
-        to_import = [f for f in os.listdir(folder) if f.endswith(".py")]
-        for filename in to_import:
-            self.__initialize_def(os.path.join(folder,filename))
+        # Build list of folders in directory
+        to_import = [f for f in os.listdir(folder) \
+                     if os.path.isdir(os.path.join(folder,f))]
+                     
+        for module in to_import:
+            self.__initialize_def(module)
         
                         
-    def __initialize_def(self, filename):
-        """Attempt to load the definition at filename"""
-        try:
-            definition = imp.load_source("", filename)
-            self.definitions[definition.info["name"]] = definition
+    def __initialize_def(self, module):
+        """Attempt to load the definition"""
+        name = "definitions.%s" % module
+        __import__(name)
+        definition = sys.modules[name]
+        self.definitions[definition.info["name"]] = definition
         
-        # This error shouldn't actually ever happen, if we start experiencing
-        # it again, then we can re-enable it
-        except IOError, e:
-            # File error
-            logging.error("%s: %s" % (e, filename))
-            
-        except AttributeError, e:
-            # Definition is not built properly
-            logging.error(e)
-
 
     def new_instance(self, name):
         """Creates a new instance of a definition"""

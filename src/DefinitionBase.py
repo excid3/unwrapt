@@ -28,24 +28,29 @@ class DefinitionBase:
     def set_architecture(self, architecture):
         pass
         
-        
+    
+    @callback
     def set_repositories(self, repositories):
         pass
         
-        
+
+    @callback        
     def update(self, reporthook):
         pass
-        
 
+        
+    @callback
     def get_available_binary_packages(self):
         pass
         
 
+    @callback
     def get_available_binary_versions(self, package):
         pass
 
-        
+
+    @callback        
     def get_binary_dependencies(self, package):
         pass
         
-        
+

@@ -9,5 +9,31 @@ info = {"name"   : "apt",
                 
 class Apt(DefinitionBase):
 
+
+#    def on___init__(self, database):
+              
+
     def on_set_architecture(self, architecture):
-        print architecture
+        pass
+        
+    
+    def on_set_repositories(self, repositories):
+        pass
+        
+
+    def on_update(self, reporthook):
+        pass
+
+        
+    def on_get_available_binary_packages(self):
+        pass
+        
+
+    def on_get_available_binary_versions(self, package):
+        pass
+
+
+    def on_get_binary_dependencies(self, package):
+        pass
+        
+

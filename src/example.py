@@ -11,7 +11,7 @@ folder = "%s/definitions" % __path__
 loader = DefinitionManager(folder)
 
 # Instanciate an apt client
-apt = loader.new_instance("apt")
+apt = loader.new_instance("apt", "database.db")
 
 # Configure the apt client
 apt.set_architecture("i386")

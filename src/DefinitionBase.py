@@ -1,3 +1,11 @@
+from sqlalchemy import create_engine
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker
+
+
+Base = declarative_base()
+
+
 def callback(func):
 
 
@@ -15,23 +23,31 @@ def callback(func):
         
 
 class DefinitionBase:
-
-
-    functions = {}
+    
     
     @callback
     def __init__(self, database):
         self.database = database
-              
+        engine = create_engine("sqlite:///%s" % database)
+        Base.metadata.create_all(engine)
+        
+        Session = sessionmaker(bind=engine)
+        self.session = Session()
+
+
+    def __del__(self):
+        self.session.commit()
+        self.session.close()
+
 
     @callback
     def set_architecture(self, architecture):
-        pass
+        self.architecture = architecture
         
     
     @callback
     def set_repositories(self, repositories):
-        pass
+        self.repositories = repositories
         
 
     @callback        
@@ -53,4 +69,7 @@ class DefinitionBase:
     def get_binary_dependencies(self, package):
         pass
         
+
+
+
 

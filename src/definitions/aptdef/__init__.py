@@ -1,12 +1,26 @@
-from DefinitionBase import DefinitionBase, Base
+import logging
+
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.schema import UniqueConstraint
+
+from DefinitionBase import DefinitionBase, Base
 
 
 info = {"name"   : "apt",
         "author" : "Chris Oliver <excid3@gmail.com>",
         "version": "1.0",
         "class"  : "Apt"}
+
+
+#TODO: Move this code to proper library location
+def url_join(first, last):
+    """ Returns full URL """
+    if first.endswith('/'):
+        if last.startswith('/'): return first + last[1:]
+        else:                    return first + last
+    else:
+        if last.startswith('/'): return first + last
+        else:                    return first + '/' + last
 
 
 class Repository(Base):
@@ -29,6 +43,10 @@ class Repository(Base):
         self.url = url
         self.dist = dist
         self.section = section
+        
+    
+    def to_url(self):
+        return url_join(self.url, url_join("dists", url_join(self.dist, self.section)))
     
                 
 class Package(Base):
@@ -64,15 +82,31 @@ class Apt(DefinitionBase):
         if not architecture in self.supported:
             raise AttributeError, "Unsupported architecture"
 
-        self.database = "binary-%s" % architecture
+        self.architecture = "binary-%s" % architecture
         
     
     def on_set_repositories(self, repositories):
-        for repo in repositories:
-            rtype, url, dist, sections = repo.split(None, 3)
+        #TODO: if self.repositories
+        #          delete each table entry
+        # This will need to actually find unlinked repository entries for
+        # use in keryx-web. Deleting the Repository entries will force the
+        # other projects (who might use the same entry) to recreate it
+        
+        for repo in self.__iter_repositories():
+            logging.info("Using repository %i" % repo.id)
+                    
+        self.session.commit()
+
+    
+    def __iter_repositories(self):
+        """Used for iterating through the repository entries
+        This function yields Repository objects and creates entries as needed
+        """
+        for repo in self.repositories:
+            rtype, url, dist, sections  = repo.split(None, 3)
             for section in sections.split():
                 try:
-                    self.session.query(Repository) \
+                    repo = self.session.query(Repository) \
                                   .filter(Repository.rtype == rtype) \
                                   .filter(Repository.url == url) \
                                   .filter(Repository.dist == dist) \
@@ -81,11 +115,14 @@ class Apt(DefinitionBase):
                 except:
                     repo = Repository(rtype, url, dist, section)
                     self.session.add(repo)
-                    
-        self.session.commit()
+                yield repo
+
 
     def on_update(self, reporthook):
-        pass
+        for repo in self.__iter_repositories():
+            main_url = url_join(repo.to_url(), url_join(self.architecture, "Packages"))
+            
+            
 
         
 #    def on_get_available_binary_packages(self):

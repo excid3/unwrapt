@@ -31,3 +31,5 @@ apt.set_repositories([
 "deb http://archive.canonical.com/ lucid partner",
 "deb http://download.virtualbox.org/virtualbox/debian lucid non-free",
 ])
+
+apt.update(None)

@@ -39,10 +39,10 @@ class Package(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     version = Column(String)
-    source = Column(Integer, ForeignKey("apt_repositories.id")
+    source = Column(Integer, ForeignKey("apt_repositories.id"))
 
     # Only allow completely unqiue package entries
-    __table_args__ = (UniqueConstraint("name", "version", "source")
+    __table_args__ = (UniqueConstraint("name", "version", "source"))
     
     
     def __init__(self, name, version, source):
@@ -71,12 +71,21 @@ class Apt(DefinitionBase):
         for repo in repositories:
             rtype, url, dist, sections = repo.split(None, 3)
             for section in sections.split():
-                repo = Repository(rtype, url, dist, section)
-                self.session.add(repo)
-        
+                try:
+                    self.session.query(Repository) \
+                                  .filter(Repository.rtype == rtype) \
+                                  .filter(Repository.url == url) \
+                                  .filter(Repository.dist == dist) \
+                                  .filter(Repository.section == section) \
+                                  .one()
+                except:
+                    repo = Repository(rtype, url, dist, section)
+                    self.session.add(repo)
+                    
+        self.session.commit()
 
-#    def on_update(self, reporthook):
-#        pass
+    def on_update(self, reporthook):
+        pass
 
         
 #    def on_get_available_binary_packages(self):

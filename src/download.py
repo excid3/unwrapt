@@ -1,4 +1,7 @@
-import urllib, os, sys
+import logging
+import os
+import urllib
+import sys
 
 
 def text_hook(url, filename, existing, total):
@@ -28,7 +31,7 @@ def download(url, filename=None, reporthook=text_hook):
     page = urlopener.open(url)
     total = int(page.headers["Content-Length"])
     finished = exist >= total
-    print exist, total, finished
+    logging.debug(exist, total, finished)
     total = total + exist
         
     bytes = 0
@@ -46,7 +49,7 @@ def download(url, filename=None, reporthook=text_hook):
     page.close()
     dest.close()
     
-
-download("http://launchpad.net/keryx/stable/0.92/+download/keryx_0.92.4.zip")
-print "voila!"
+if __name__ == "__main__":
+    download("http://launchpad.net/keryx/stable/0.92/+download/keryx_0.92.4.zip")
+    print "voila!"
 

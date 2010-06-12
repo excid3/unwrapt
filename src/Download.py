@@ -15,83 +15,73 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-import logging
 import math
+import pycurl
 import os
 import time
-import urllib
 import sys
 
 
-class Downloader:
-    def __init__(self, url, filename=None, reporthook=None):
+class EasyCurl:
+
+
+    def __init__(self, proxy=None):
+
+        self.pco = pycurl.Curl()
+        self.pco.setopt(pycurl.FOLLOWLOCATION, 1)
+        self.pco.setopt(pycurl.MAXREDIRS,      5)
+        #self.pco.setopt(pycurl.TIMEOUT,       5*3600)
+        self.pco.setopt(pycurl.CONNECTTIMEOUT, 30)
+        self.pco.setopt(pycurl.AUTOREFERER,    1)
+            
+        #TODO: Proxy!
+            
         
-        # Create a filename if we need to
+    def perform(self, url, filename=None, resume=True, progress=None):
+        
+        # Generate filename if not given
         if not filename:
-            filename = url.strip("/").split("/")[-1]
-        
-        if not reporthook:
-            reporthook = self.textreport
-        
-        self.url = url
+            filename = url.strip("/").split("/")[-1].strip()        
         self.filename = filename
-        self.hook = reporthook
-        self.existing = self.__check_partial()
-        self.re = RateEstimator()
-        
-        
-    def start(self):
-    
-        # Configure the 
-        urlopener = urllib.FancyURLopener()
-        urlopener.addheader("Range", "bytes=%s-" % self.existing)
-        
-        page = urlopener.open(self.url)
-        
-        total = int(page.headers["Content-Length"])
-        total += self.existing        
-        
-        self.re.start(total)
-        
-        dest = open(self.filename, "ab")
-        
-        bytes = 0
-        while self.existing <= total:
-            data = page.read(8192)
-            bytes += len(data)
+
+        # Get resume information 
+        self.existing = self.start_existing = 0
+        if resume and os.path.exists(filename):
+            self.existing = self.start_existing = os.path.getsize(filename)
+            self.pco.setopt(pycurl.RESUME_FROM, self.existing)
+
+        # Configure progress hook            
+        if progress:
+            self.pco.setopt(pycurl.NOPROGRESS,       0)
+            self.pco.setopt(pycurl.PROGRESSFUNCTION, progress)
             
-            self.re.update(bytes)
-            self.hook(self.existing + bytes, total)
-            
-            if not data:
-                break
+        # Configure url and destination
+        self.pco.setopt(pycurl.URL, url)
+        self.pco.setopt(pycurl.WRITEDATA, open(filename, "ab"))
         
-            dest.write(data)
-            
-            
-        page.close()
-        dest.close()
+        # Start
+        self.pco.perform()
         
-    def textreport(self, existing, total):
-    
-        frac = float(existing)/float(total)
-        bar = '=' * int(25*frac) 
+        sys.stdout.write("\n")
+
+
+    def textprogress(self, download_t, download_d, upload_t, upload_d):            
+
+        downloaded = download_d + self.existing
+        total      = download_t + self.start_existing
+        try:    frac = float(downloaded)/float(total)
+        except: frac = 0
         
-        sys.stdout.write("\r%-25.25s %3i%% |%-25.25s|" % \
+        bar = "=" * int(25*frac)
+        
+        sys.stdout.write("\r%-25.25s %3i%% |%-25.25s| %5sB of %5sB" % \
             (self.filename,
              frac*100,
-             bar))
-        if frac == 1:
-            sys.stdout.write("\n")
-    
-    
-    def __check_partial(self):
-        if os.path.exists(self.filename):
-            return os.path.getsize(self.filename)
-        else:
-            return 0
-            
-            
+             bar,
+             format_number(downloaded),
+             format_number(total)))
+              
+
 class RateEstimator:
     def __init__(self, timescale=5.0):
         self.timescale = timescale
@@ -251,5 +241,9 @@ def format_number(number, SI=0, space=' '):
     return(format % (float(number or 0), space, symbols[depth]))
     
 
-d = Downloader("http://launchpad.net/keryx/stable/0.92/+download/keryx_0.92.4.zip")
-d.start()
+if __name__ == "__main__":
+    url = "http://launchpad.net/keryx/stable/0.92/+download/keryx_0.92.4.zip"
+    ec = EasyCurl()
+    ec.perform(url, progress=ec.textprogress)
+
+

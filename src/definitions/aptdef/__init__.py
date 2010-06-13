@@ -21,6 +21,7 @@ from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.schema import UniqueConstraint
 
 from DefinitionBase import DefinitionBase, Base
+from Download import EasyCurl
 
 
 info = {"name"   : "apt",
@@ -136,8 +137,27 @@ class Apt(DefinitionBase):
 
 
     def on_update(self, reporthook):
+        ec = EasyCurl()
+
         for repo in self.__iter_repositories():
-            main_url = url_join(repo.to_url(), url_join(self.architecture, "Packages"))
+
+            # Use str() because pycurl does not support unicode strings
+            url = url_join(repo.to_url(), 
+                           url_join(self.architecture, "Packages"))
+            filename = url.split("//")[1].replace("/", "_")
+            display_name = "Repository => %s" % repo.section
+
+            # Download
+            import os
+            if os.path.exists(filename):
+                os.remove(filename)
+
+            gz = str("%s.gz" % url)
+#            print display_name, filename, gz
+            ec.perform(gz, 
+                       filename,
+                       display_name,
+                       progress=ec.textprogress)
             
                     
 #    def on_get_available_binary_packages(self):

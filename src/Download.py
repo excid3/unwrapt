@@ -23,10 +23,12 @@ import sys
 
 
 class EasyCurl:
+    """
+        EasyCurl is a simple class for downloading files using the cURL library
+    """
+    
 
-
-    def __init__(self, proxy=None):
-
+    def __init__(self, proxy=None):        
         self.pco = pycurl.Curl()
         self.pco.setopt(pycurl.FOLLOWLOCATION, 1)
         self.pco.setopt(pycurl.MAXREDIRS,      5)
@@ -37,12 +39,21 @@ class EasyCurl:
         #TODO: Proxy!
             
         
-    def perform(self, url, filename=None, resume=True, progress=None):
-        
+    def perform(self, url, 
+                      filename=None, 
+                      display_name=None, 
+                      resume=True, 
+                      progress=None):
+                      
         # Generate filename if not given
         if not filename:
             filename = url.strip("/").split("/")[-1].strip()        
         self.filename = filename
+        
+        # Display name is filename if not given
+        if not display_name:
+            display_name = filename
+        self.display_name = display_name
 
         # Get resume information 
         self.existing = self.start_existing = 0
@@ -65,8 +76,7 @@ class EasyCurl:
         sys.stdout.write("\n")
 
 
-    def textprogress(self, download_t, download_d, upload_t, upload_d):            
-
+    def textprogress(self, download_t, download_d, upload_t, upload_d):
         downloaded = download_d + self.existing
         total      = download_t + self.start_existing
         try:    frac = float(downloaded)/float(total)
@@ -75,7 +85,7 @@ class EasyCurl:
         bar = "=" * int(25*frac)
         
         sys.stdout.write("\r%-25.25s %3i%% |%-25.25s| %5sB of %5sB" % \
-            (self.filename,
+            (self.display_name,
              frac*100,
              bar,
              format_number(downloaded),

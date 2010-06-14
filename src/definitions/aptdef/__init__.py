@@ -15,7 +15,11 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import gzip
 import logging
+import os
+import pycurl
+import sys
 
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.schema import UniqueConstraint
@@ -137,27 +141,70 @@ class Apt(DefinitionBase):
 
 
     def on_update(self, reporthook):
+        #TODO: When do we clear the repository files and require fresh?
+        #      We should use the expires HTTP header and check timestamps
+
         ec = EasyCurl()
 
         for repo in self.__iter_repositories():
 
-            # Use str() because pycurl does not support unicode strings
+            # Build the strings
             url = url_join(repo.to_url(), 
                            url_join(self.architecture, "Packages"))
-            filename = url.split("//")[1].replace("/", "_")
-            display_name = "Repository => %s" % repo.section
+            filename = os.path.join("downloads/lists",
+                                    url.split("//")[1].replace("/", "_")) 
+            display_name = "Repository => %s.%s" % (repo.dist, repo.section)
+            # Use str() because pycurl does not support unicode strings
+            gz = str("%s.gz" % url)
+            
+            #logging.debug(display_name)
+            #logging.debug(filename)
+            logging.debug(gz)
+
+            # If the download directory does not exist, create it
+            if not os.path.exists("downloads/lists"):
+                os.makedirs("downloads/lists")
 
             # Download
-            import os
-            if os.path.exists(filename):
-                os.remove(filename)
+            try:
+                self.__download(ec, 
+                                gz, 
+                                "%s.gz" % filename, 
+                                display_name, 
+                                ec.textprogress)
+            except Exception, e:
+                raise Exception, e
+            
+            # Extract
+            f = gzip.open(filename, "rb")
 
-            gz = str("%s.gz" % url)
-#            print display_name, filename, gz
-            ec.perform(gz, 
-                       filename,
-                       display_name,
-                       progress=ec.textprogress)
+
+    def __download(self, curl, url, filename, display_name, progress):
+
+            try:
+                curl.perform(url, 
+                             filename,
+                             display_name,
+                             progress=progress)
+                           
+            except KeyboardInterrupt:
+                # Download fully transfered
+                raise KeyboardInterrupt
+                
+            except pycurl.error, e:
+
+                if e.args[0] == 18:
+                    # This exception is actually fine. It means that we are
+                    # trying to download a file that is already 100% complete 
+                    sys.stdout.write("\n")
+                
+                elif e.args[0] == 42:
+                    # Callback aborted
+                    raise KeyboardInterrupt
+                    
+                else:
+                    raise IOError, "Problem downloading file. Delete %s and " \
+                                   "start again." % filename
             
                     
 #    def on_get_available_binary_packages(self):

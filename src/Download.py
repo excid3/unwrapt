@@ -15,6 +15,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import logging
 import math
 import pycurl
 import os
@@ -35,6 +36,8 @@ class EasyCurl:
         #self.pco.setopt(pycurl.TIMEOUT,       5*3600)
         self.pco.setopt(pycurl.CONNECTTIMEOUT, 30)
         self.pco.setopt(pycurl.AUTOREFERER,    1)
+        self.pco.setopt(pycurl.NOSIGNAL,       1)
+        self.pco.setopt(pycurl.HEADERFUNCTION, self.header)
             
         #TODO: Proxy!
             
@@ -56,10 +59,12 @@ class EasyCurl:
         self.display_name = display_name
 
         # Get resume information 
-        self.existing = self.start_existing = 0
+        self.existing = 0
+        self.start_existing = 0
         if resume and os.path.exists(filename):
             self.existing = self.start_existing = os.path.getsize(filename)
             self.pco.setopt(pycurl.RESUME_FROM, self.existing)
+        logging.debug("Existing content %d" % self.existing)
 
         # Configure progress hook            
         if progress:
@@ -76,18 +81,34 @@ class EasyCurl:
         sys.stdout.write("\n")
 
 
+    def header(self, buf):
+
+        #TODO: Use Expires header to determine if we need to redownload all off
+        # the file (in case of resume)
+        
+        logging.debug(buf)
+        #200 OK or 206 Partial Content is what we are looking for
+        # On 416 we need to crash
+        
+#        if buf.find("Requested Range Not Satisfiable") == -1:
+#            # This error is trapped within pycurl so we might as well just
+#            # throw a pycurl error (32, "Failed writing header")
+#            #raise AttributeError, "Unable to resume"
+#            return 0
+
+
     def textprogress(self, download_t, download_d, upload_t, upload_d):
         downloaded = download_d + self.existing
         total      = download_t + self.start_existing
         try:    frac = float(downloaded)/float(total)
         except: frac = 0
         
-        bar = "=" * int(25*frac)
+        #bar = "=" * int(25*frac)
         
-        sys.stdout.write("\r%-25.25s %3i%% |%-25.25s| %5sB of %5sB" % \
+        sys.stdout.write("\r%-50.50s | %3i%% | %5sB of %5sB" % \
             (self.display_name,
              frac*100,
-             bar,
+             #bar,
              format_number(downloaded),
              format_number(total)))
               

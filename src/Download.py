@@ -116,6 +116,14 @@ class EasyCurl:
               
 
 class RateEstimator:
+    """
+        Thanks to the urlgrabber team for RateEstimator and the format_ 
+        functions! They work beautifully. The DUKE homepage is down, however,
+        it seems the new site is here: http://urlgrabber.baseurl.org/
+        
+        This code is licensed under the LGPL
+    """
+    
     def __init__(self, timescale=5.0):
         self.timescale = timescale
 

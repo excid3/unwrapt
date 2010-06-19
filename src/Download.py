@@ -105,7 +105,9 @@ class EasyCurl:
         
         #bar = "=" * int(25*frac)
         
-        sys.stdout.write("\r%-50.50s | %3i%% | %5sB of %5sB" % \
+        #TODO: RateEstimator
+        
+        sys.stdout.write("\r%-58.58s %3i%% [%5sB/%5sB]" % \
             (self.display_name,
              frac*100,
              #bar,

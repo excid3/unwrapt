@@ -153,7 +153,7 @@ class Apt(DefinitionBase):
                            url_join(self.architecture, "Packages"))
             filename = os.path.join("downloads/lists",
                                     url.split("//")[1].replace("/", "_")) 
-            display_name = "Repository => %s.%s" % (repo.dist, repo.section)
+            display_name = "Repository => %s / %s" % (repo.dist, repo.section)
             # Use str() because pycurl does not support unicode strings
             gz = str("%s.gz" % url)
             
@@ -176,7 +176,7 @@ class Apt(DefinitionBase):
                 raise Exception, e
             
             # Extract
-            f = gzip.open(filename, "rb")
+            #f = gzip.open(filename, "rb")
 
 
     def __download(self, curl, url, filename, display_name, progress):

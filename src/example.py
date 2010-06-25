@@ -20,7 +20,7 @@ import os
 
 from DefinitionManager import DefinitionManager
 
-logging.basicConfig()#level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG)
 
 # Make sure this works being launched from any location
 __path__ = os.path.dirname(os.path.abspath(__file__))

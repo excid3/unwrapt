@@ -42,7 +42,9 @@ def callback(func):
 class DefinitionBase:
     
     
-    @callback
+    # I don't know if it's necessary to do this, initialization can be split
+    # across the set_architecture/set_repositories functions before on_update
+    #@callback
     def __init__(self, database):
         self.database = database
         engine = create_engine("sqlite:///%s" % database)

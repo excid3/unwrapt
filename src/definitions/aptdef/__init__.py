@@ -135,8 +135,13 @@ class Apt(DefinitionBase):
                                   .filter(Repository.section == section) \
                                   .one()
                 except:
-                    repo = Repository(rtype, url, dist, section)
-                    self.session.add(repo)
+                    self.session.add(Repository(rtype, url, dist, section))
+                    repo = self.session.query(Repository) \
+                                  .filter(Repository.rtype == rtype) \
+                                  .filter(Repository.url == url) \
+                                  .filter(Repository.dist == dist) \
+                                  .filter(Repository.section == section) \
+                                  .one()
                 yield repo
 
 
@@ -146,6 +151,8 @@ class Apt(DefinitionBase):
 
         ec = EasyCurl()
 
+        # This is a list of files we downloaded and now need to parse
+        downloaded = []
         for repo in self.__iter_repositories():
 
             # Build the strings
@@ -167,16 +174,19 @@ class Apt(DefinitionBase):
 
             # Download
             try:
+                gz_file = "%s.gz" % filename
                 self.__download(ec, 
                                 gz, 
-                                "%s.gz" % filename, 
+                                gz_file, 
                                 display_name, 
                                 ec.textprogress)
+                downloaded.append(gz_file)
             except Exception, e:
+                #TODO: Add support for bz2 and uncompressed Packages files
                 raise Exception, e
-            
-            # Extract
-            #f = gzip.open(filename, "rb")
+
+        # Now parse each file, extracting as necessary        
+            # Insert items into database
 
 
     def __download(self, curl, url, filename, display_name, progress):

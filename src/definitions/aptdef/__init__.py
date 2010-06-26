@@ -185,36 +185,60 @@ class Apt(DefinitionBase):
                 #TODO: Add support for bz2 and uncompressed Packages files
                 raise Exception, e
 
-        # Now parse each file, extracting as necessary        
+        # Now parse each file, extracting as necessary
+        for filename in downloaded:
+        
+            if filename.endswith(".gz"):
+                f = gzip.open(filename, "rb")
+            else:
+                f = open(filename, "rb")
+
+            data = f.read()
+            f.close()
+
+            # Parse packages into dictionary
+
             # Insert items into database
+
+
+    def __parse(self, data):
+        """
+            data - a string of all data in a file (from f.read() for example)
+            
+            returns a dictionary will all packages in file
+        """
+        for section in data.split("\n\n"):
+            lines = section.split("\n")
+            pkg = {}
+            for line in lines:
 
 
     def __download(self, curl, url, filename, display_name, progress):
 
-            try:
-                curl.perform(url, 
-                             filename,
-                             display_name,
-                             progress=progress)
-                           
-            except KeyboardInterrupt:
-                # Download fully transfered
+        try:
+            curl.perform(url, 
+                         filename,
+                         display_name,
+                         progress=progress)
+                       
+        except KeyboardInterrupt:
+            # Download fully transfered
+            raise KeyboardInterrupt
+            
+        except pycurl.error, e:
+
+            if e.args[0] == 18:
+                # This exception is actually fine. It means that we are
+                # trying to download a file that is already 100% complete 
+                sys.stdout.write("\n")
+            
+            elif e.args[0] == 42:
+                # Callback aborted
                 raise KeyboardInterrupt
                 
-            except pycurl.error, e:
-
-                if e.args[0] == 18:
-                    # This exception is actually fine. It means that we are
-                    # trying to download a file that is already 100% complete 
-                    sys.stdout.write("\n")
-                
-                elif e.args[0] == 42:
-                    # Callback aborted
-                    raise KeyboardInterrupt
-                    
-                else:
-                    raise IOError, "Problem downloading file. Delete %s and " \
-                                   "start again." % filename
+            else:
+                raise IOError, "Problem downloading file. Delete %s and " \
+                               "start again." % filename
             
                     
 #    def on_get_available_binary_packages(self):

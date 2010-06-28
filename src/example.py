@@ -49,4 +49,5 @@ apt.set_repositories([
 "deb http://download.virtualbox.org/virtualbox/debian lucid non-free",
 ])
 
-apt.update(None)
+# Report hook is None so it will print to console
+apt.update()

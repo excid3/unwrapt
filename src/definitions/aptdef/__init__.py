@@ -145,11 +145,14 @@ class Apt(DefinitionBase):
                 yield repo
 
 
-    def on_update(self, reporthook):
+    def on_update(self, reporthook=None):
         #TODO: When do we clear the repository files and require fresh?
         #      We should use the expires HTTP header and check timestamps
 
         ec = EasyCurl()
+        
+        if not reporthook:
+            reporthook = ec.textprogress
 
         # This is a list of files we downloaded and now need to parse
         downloaded = []
@@ -179,7 +182,7 @@ class Apt(DefinitionBase):
                                 gz, 
                                 gz_file, 
                                 display_name, 
-                                ec.textprogress)
+                                reporthook)
                 downloaded.append(gz_file)
             except Exception, e:
                 #TODO: Add support for bz2 and uncompressed Packages files

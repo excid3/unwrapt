@@ -70,7 +70,7 @@ class DefinitionBase:
         
 
     @callback        
-    def update(self, reporthook):
+    def update(self, reporthook=None):
         pass
 
         
@@ -88,7 +88,3 @@ class DefinitionBase:
     def get_binary_dependencies(self, package):
         pass
         
-
-
-
-

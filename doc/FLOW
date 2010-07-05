@@ -1,0 +1,49 @@
+Glossary
+--------
+Add Computer - Adds the computer profile into Keryx for management
+Manage Computer - Opens the profile for downloading of packages or installing
+
+Keryx Desktop Flow
+------------------
+Initialize Unwrapt DefinitionManager
+Initialize GTK interface
+Display Main window with only the Home tab (this is not closable)
+ - Home tab displays add/manage computer menu
+ - During management, display statistics (installed packages, space on drive, etc)
+Open a computer for management brings up the software tab and updates tab, but stays focused on the Home tab
+ - Home tab will display "Packages are waiting to be installed" and "Install Packages" button if it detects that it is running on the offline machine and packages are ready to be installed
+User selects to download package(s) from software or updates, download tab is displayed with a list of downloads
+ (NOTE: Users don't need the ability to close tabs, unless they request the feature)
+Packages are downloaded
+User takes Keryx home
+User manages computer
+ - User selects install packages
+ - Install tab is displayed
+ - Integrate a terminal into this view
+ - Begin installation of packages with our chosen method
+   - Create a local repository on the flash drive and add it to their sources. This works because we give users the ability to edit their sources.list anyways, so it would have to be updated if it was changed.
+   - Handled through Unwrapt
+ - Automatically update the computer's status data
+ - Close button can be added to tab when installation is finished
+ 
+A preferences tab will be always available (even without having a computer open for management) from the menu
+ - This will be just another tab
+ - Keep it stupid simple
+   - Any advanced features go in a secondary tab
+ - Save/cancel
+
+Unwrapt Flow
+------------
+Initialize the DefinitionManager
+ - This loads the definitions from any given folder
+ - If not given a folder, defaults to "__file__/definitions" so that it looks in the location the library is located
+new_instance creates a new Unwrapt client given a definition name and a database to store the information in
+ - TODO: None for definition name will store it in memory
+ - Rename function?
+Set architecture
+Set repos
+Update
+ - Not necessary if the database is populated
+Get binary packages
+Installation
+ - Automatically update status after installation complete

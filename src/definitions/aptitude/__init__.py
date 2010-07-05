@@ -15,17 +15,26 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+"""
+    Our packages are stored in the following format in self.packages
+    
+    {"package name": [{version1}, {version2}, {version3}],
+     "package two": [{version1}]}
+     
+     This allows us to easily find a package, as well as all the versions
+"""
+
+
 import gzip
 import logging
 import os
-import pycurl
 import sys
 
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.schema import UniqueConstraint
 
 from DefinitionBase import DefinitionBase, Base
-from Download import EasyCurl
+from Download import download
 
 
 info = {"name"   : "apt",
@@ -149,8 +158,6 @@ class Apt(DefinitionBase):
         #TODO: When do we clear the repository files and require fresh?
         #      We should use the expires HTTP header and check timestamps
 
-        ec = EasyCurl()
-
         # This is a list of files we downloaded and now need to parse
         downloaded = []
         for repo in self.__iter_repositories():
@@ -159,87 +166,102 @@ class Apt(DefinitionBase):
             url = url_join(repo.to_url(), 
                            url_join(self.architecture, "Packages"))
             filename = os.path.join("downloads/lists",
-                                    url.split("//")[1].replace("/", "_")) 
+                                    url.split("//")[1].replace("/", "_"))
             display_name = "Repository => %s / %s" % (repo.dist, repo.section)
-            # Use str() because pycurl does not support unicode strings
-            gz = str("%s.gz" % url)
-            
-            #logging.debug(display_name)
-            #logging.debug(filename)
-            logging.debug(gz)
 
             # If the download directory does not exist, create it
             if not os.path.exists("downloads/lists"):
                 os.makedirs("downloads/lists")
 
             # Download
-            try:
-                gz_file = "%s.gz" % filename
-                self.__download(ec, 
-                                gz, 
-                                gz_file, 
-                                display_name, 
-                                ec.textprogress)
-                downloaded.append(gz_file)
-            except Exception, e:
-                #TODO: Add support for bz2 and uncompressed Packages files
-                raise Exception, e
-
-        # Now parse each file, extracting as necessary
-        for filename in downloaded:
+            #TODO: pass proxy information and catch exceptions
+            #TODO: Support bz2 and unarchived Packages files
+            filename = "%s.gz" % filename
+            download("%s.gz" % url, filename, display_name)
+            downloaded.append((repo, filename))
+            
+            
+        self.packages = {}
         
-            if filename.endswith(".gz"):
-                f = gzip.open(filename, "rb")
-            else:
-                f = open(filename, "rb")
+        # Now parse each file, extracting as necessary
+        for repo, filename in downloaded:
 
-            data = f.read()
-            f.close()
+            f = gzip.open(filename, "rb")
 
             # Parse packages into dictionary
-
+            self.__parse(repo, f)
+            f.close()
+            print len(self.packages)            
             # Insert items into database
+            
 
-
-    def __parse(self, data):
+    def __parse(self, repo, f):
         """
             data - a string of all data in a file (from f.read() for example)
             
             returns a dictionary will all packages in file
         """
-        for section in data.split("\n\n"):
-            lines = section.split("\n")
-            pkg = {}
-            for line in lines:
-
-
-    def __download(self, curl, url, filename, display_name, progress):
-
-        try:
-            curl.perform(url, 
-                         filename,
-                         display_name,
-                         progress=progress)
-                       
-        except KeyboardInterrupt:
-            # Download fully transfered
-            raise KeyboardInterrupt
+        
+        current = {}
+        for line in f:
+        
+            if line.startswith("\n") and "Package" in current:
             
-        except pycurl.error, e:
+                if current["Package"] in self.packages:
+                    self.packages[current["Package"]].append(current)
+                else:
+                    self.packages[current["Package"]] = [current]
 
-            if e.args[0] == 18:
-                # This exception is actually fine. It means that we are
-                # trying to download a file that is already 100% complete 
-                sys.stdout.write("\n")
-            
-            elif e.args[0] == 42:
-                # Callback aborted
-                raise KeyboardInterrupt
-                
+                current = {}
+                    
+            elif line.startswith(" ") or line.startswith("\t"):
+                if "Long" in current:
+                    current["Long"] += line
+                else:
+                    current["Long"] = line
+                    
             else:
-                raise IOError, "Problem downloading file. Delete %s and " \
-                               "start again." % filename
+                try:
+                    key, value = line.split(": ", 1)
+                    current[key] = value.strip()
+                except Exception, e:
+                    print repr(line)
+                    print e
             
+#        for section in data.split("\n\n"):
+        
+            # We are running through an individual package here
+            # so we split the data
+#            lines = section.split("\n")
+            
+#            name = ""
+#            values = {}
+#            for line in lines:
+#                try:
+#                    # Long descriptions need to be handled differently
+#                    if line.startswith(" "):
+#                        key = "Long"
+#                        if values.has_key("Long"):
+#                            value = values["Long"] + line
+#                        else:
+#                            value = line
+#                    else:
+#                        key, value = line.split(": ", 1)
+#                
+#                    if key == "Name":
+#                        name = value
+
+#                    values[key] = value
+#                except Exception, e:
+#                    logging.error(e)
+#                    logging.error(line)
+                
+##            # Assign package
+ #           if self.packages.has_key(name):
+ #               self.packages[name].append(values)
+ #           else:
+ #               self.packages[name] = [values]
+                
                     
 #    def on_get_available_binary_packages(self):
 #        pass

@@ -33,7 +33,7 @@ loader = DefinitionManager(folder)
 apt = loader.new_instance("apt", "database.db")
 
 # Configure the apt client
-apt.set_architecture("i386")
+apt.set_architecture("amd64")
 
 apt.set_repositories([
 "deb http://us.archive.ubuntu.com/ubuntu/ lucid main restricted",
@@ -47,6 +47,9 @@ apt.set_repositories([
 "deb http://security.ubuntu.com/ubuntu lucid-security multiverse",
 "deb http://archive.canonical.com/ lucid partner",
 "deb http://download.virtualbox.org/virtualbox/debian lucid non-free",
-])
+"deb http://us.archive.ubuntu.com/ubuntu/ lucid-proposed restricted main multiverse universe",
+"deb http://us.archive.ubuntu.com/ubuntu/ lucid-backports restricted main multiverse universe"])
+
+
 
 apt.update(None)

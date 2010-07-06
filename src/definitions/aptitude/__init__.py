@@ -154,7 +154,7 @@ class Apt(DefinitionBase):
                 yield repo
 
 
-    def on_update(self, reporthook):
+    def on_update(self, reporthook=None):
         #TODO: When do we clear the repository files and require fresh?
         #      We should use the expires HTTP header and check timestamps
 

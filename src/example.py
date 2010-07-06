@@ -48,8 +48,8 @@ apt.set_repositories([
 "deb http://archive.canonical.com/ lucid partner",
 "deb http://download.virtualbox.org/virtualbox/debian lucid non-free",
 "deb http://us.archive.ubuntu.com/ubuntu/ lucid-proposed restricted main multiverse universe",
-"deb http://us.archive.ubuntu.com/ubuntu/ lucid-backports restricted main multiverse universe"])
+"deb http://us.archive.ubuntu.com/ubuntu/ lucid-backports restricted main multiverse universe"
+])
 
+apt.update()
 
-
-apt.update(None)

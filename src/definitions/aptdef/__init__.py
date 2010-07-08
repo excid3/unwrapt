@@ -124,7 +124,7 @@ class Apt(DefinitionBase):
         # other projects (who might use the same entry) to recreate it
         
         for repo in self.__iter_repositories():
-            logging.info("Using repository %i" % repo.id)
+            logging.debug("Using repository %i" % repo.id)
                     
         self.session.commit()
 
@@ -177,23 +177,34 @@ class Apt(DefinitionBase):
             #TODO: pass proxy information and catch exceptions
             #TODO: Support bz2 and unarchived Packages files
             filename = "%s.gz" % filename
-            download("%s.gz" % url, filename, display_name)
+            #download("%s.gz" % url, filename, display_name)
             downloaded.append((repo, filename))
             
             
         self.packages = {}
-        
+ 
+        total = len(downloaded)
         # Now parse each file, extracting as necessary
-        for repo, filename in downloaded:
+        for i, value in enumerate(downloaded):
+            repo, filename = value
+
+            # Display percent read            
+            frac = (float(i)/float(total))*100
+            sys.stdout.write("\rReading package lists... %3i%%" % frac)
+            sys.stdout.flush()
 
             f = gzip.open(filename, "rb")
 
             # Parse packages into dictionary
             self.__parse(repo, f)
             f.close()
-            print len(self.packages)            
-            # Insert items into database
             
+            #TODO: Insert items into database
+
+        sys.stdout.write("\rReading package lists... %3i%%" % 100)
+        sys.stdout.write("\n")
+        
+        print "%i packages available" % len(self.packages)
 
     def __parse(self, repo, f):
         """
@@ -225,44 +236,10 @@ class Apt(DefinitionBase):
                     key, value = line.split(": ", 1)
                     current[key] = value.strip()
                 except Exception, e:
-                    print repr(line)
-                    print e
+                    logging.debug(repr(line))
+                    logging.debug(e)
             
-#        for section in data.split("\n\n"):
-        
-            # We are running through an individual package here
-            # so we split the data
-#            lines = section.split("\n")
-            
-#            name = ""
-#            values = {}
-#            for line in lines:
-#                try:
-#                    # Long descriptions need to be handled differently
-#                    if line.startswith(" "):
-#                        key = "Long"
-#                        if values.has_key("Long"):
-#                            value = values["Long"] + line
-#                        else:
-#                            value = line
-#                    else:
-#                        key, value = line.split(": ", 1)
-#                
-#                    if key == "Name":
-#                        name = value
 
-#                    values[key] = value
-#                except Exception, e:
-#                    logging.error(e)
-#                    logging.error(line)
-                
-##            # Assign package
- #           if self.packages.has_key(name):
- #               self.packages[name].append(values)
- #           else:
- #               self.packages[name] = [values]
-                
-                    
 #    def on_get_available_binary_packages(self):
 #        pass
         

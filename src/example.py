@@ -55,7 +55,14 @@ apt.set_repositories([
 
 apt.update()
 
-metadata = apt.get_latest_binary("abiword")
+# Get a list of available versions of a package
+apt.get_available_binary_versions("abiword")
 
+# Get the newest version of a package
+package = apt.get_latest_binary("abiword")
+#print package
+
+# Get a list of dependencies of the package
+apt.get_binary_dependencies(package)
 
 

@@ -108,7 +108,7 @@ class Apt(DefinitionBase):
     status = {}
     supported = ["amd64", "armel", "i386", "ia64", "powerpc", "sparc"]
     status_properties = ["Package", "Version", "Status"]
-                 
+    binary_dependencies = ["Pre-Depends", "Depends", "Recommends"]
 
     def on_set_architecture(self, architecture):
         if not architecture in self.supported:
@@ -267,7 +267,7 @@ class Apt(DefinitionBase):
                     key, value = line.split(": ", 1)
                     
                     if key in self.status_properties:
-                        current[key] = value
+                        current[key] = value.strip()
                 except:
                     pass
         
@@ -283,6 +283,9 @@ class Apt(DefinitionBase):
         
         available = self.get_available_binary_versions(package)
         
+        if not available:
+            return None
+            
         # Set the DpkgVersion instance for each package
         for pkg in available:        
             pkg["DpkgVersion"] = DpkgVersion(pkg["Version"])
@@ -308,3 +311,48 @@ class Apt(DefinitionBase):
         return self.packages[package]
 
 
+    def on_get_binary_dependencies(self, metadata):
+        """
+            Get a list of dependencies based on package metadata
+        """
+        
+        # Build a string of the necessary sections we need
+        depends = []
+        for section in self.binary_dependencies:
+            if section in metadata:
+                depends.append(metadata[section])
+        depends = ", ".join(depends)
+        
+        # Do the dependency calculations
+        for dep in depends.split(", "):
+            
+            # In case we have some ORs
+            options = dep.split(" | ")
+            
+            satisfied = False
+            for option in options:
+            
+                details = option.split(" ")
+                name = details[0]
+                
+                
+                # If any of these packages are already installed, break
+                if name in self.status:
+                    logging.debug("Dependency %s installed!" % name)
+                    
+                    # Test for compatible version
+                    if len(details) > 1:
+                        comparison = details[1][1:] # strip the '('
+                        version = details [2][:-1] # strip the ')'
+                        
+                        print comparison, version, self.status[name]["Version"]
+                        
+                
+            # No package was installed, so take the first one and add it
+            # as a dependency
+            if not satisfied:
+                pass
+
+        return [metadata] + []
+        
+        

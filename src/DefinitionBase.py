@@ -89,6 +89,7 @@ class DefinitionBase:
 
 
     @callback        
-    def get_binary_dependencies(self, package):
+    def get_binary_dependencies(self, metadata):
         pass
+     
         

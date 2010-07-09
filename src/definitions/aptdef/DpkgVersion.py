@@ -45,6 +45,8 @@ class DpkgVersion(object):
      - revision: Debian/local revision
     """
 
+    allowed_types = ["<<", "<=", "=", ">=", ">>"]
+
     def __init__(self, ver):
         """Parse a string or number into the three components."""
         self.epoch = None
@@ -139,6 +141,25 @@ class DpkgVersion(object):
         if not self.revision:
             native = True
         return native
+        
+    def compare_string(self, comparison, value):
+        if not comparison in self.allowed_types:
+            raise AttributeError, \
+                  "%s is not one of the following types: %s" % (comparison,
+                                               ", ".join(self.allowed_types))
+        
+        if comparison == "<<":
+            return self < value
+        elif comparison == "<=":
+            return self <= value
+        elif comparison == "=":
+            return self == value
+        elif comparison == ">=":
+            return self >= value
+        elif comparison == ">>":
+            return self > value
+        else:
+            raise AttributeError, "This should never happen"
 
 def strcut(str, idx, accept):
     """Cut characters from str that are entirely in accept."""

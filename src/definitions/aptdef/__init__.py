@@ -107,7 +107,7 @@ class Apt(DefinitionBase):
     packages = {}
     status = {}
     supported = ["amd64", "armel", "i386", "ia64", "powerpc", "sparc"]
-    status_properties = ["Package", "Version", "Status"]
+    status_properties = ["Package", "Version", "Status", "Provides"]
     binary_dependencies = ["Pre-Depends", "Depends", "Recommends"]
 
     def on_set_architecture(self, architecture):
@@ -257,7 +257,7 @@ class Apt(DefinitionBase):
         
         current = {}
         for line in f:
-        
+            #TODO: DON'T ADD A PACKAGE IF THE STATUS IS SOMETHING OTHER THAN install ok installed
             if line.startswith("\n") and "Package" in current:
                 self.status[current["Package"]] = current
                 current = {}
@@ -315,7 +315,9 @@ class Apt(DefinitionBase):
         """
             Get a list of dependencies based on package metadata
         """
-        
+
+        new = []
+
         # Build a string of the necessary sections we need
         depends = []
         for section in self.binary_dependencies:
@@ -335,24 +337,38 @@ class Apt(DefinitionBase):
                 details = option.split(" ")
                 name = details[0]
                 
-                
-                # If any of these packages are already installed, break
+                # If any of these packages are already installed
                 if name in self.status:
                     logging.debug("Dependency %s installed!" % name)
+
+                    # Assume installed version will work
+                    satisfied = True
                     
-                    # Test for compatible version
+                    # Test for compatible version just in case
                     if len(details) > 1:
                         comparison = details[1][1:] # strip the '('
                         version = details [2][:-1] # strip the ')'
                         
-                        print comparison, version, self.status[name]["Version"]
+                        satisfied = DpkgVersion(self.status[name]["Version"]).compare_string(comparison, version)
+                        
+                    # No need to test the other options if one is found
+                    if satisfied:
+                        break
                         
                 
             # No package was installed, so take the first one and add it
             # as a dependency
             if not satisfied:
-                pass
 
+                #TODO: Mark latest package (if it matches versions)
+                new.append(self.packages[options[0].split()[0]])
+                
+                # Mark sub-dependencies as well
+                print "Finding dependencies for %s..." % options[0]
+
+                #TODO: Mark the package status
+                
+        print new
         return [metadata] + []
         
         

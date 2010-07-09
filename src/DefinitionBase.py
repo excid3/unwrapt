@@ -69,13 +69,17 @@ class DefinitionBase:
         self.repositories = repositories
         
 
+    @callback
+    def set_status(self, status=None):
+        pass
+
     @callback        
     def update(self, reporthook=None):
         pass
 
         
     @callback
-    def get_available_binary_packages(self):
+    def get_latest_binary(self, package):
         pass
         
 

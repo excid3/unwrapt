@@ -33,6 +33,8 @@ import sys
 from sqlalchemy import Column, ForeignKey, Integer, String
 from sqlalchemy.schema import UniqueConstraint
 
+from DpkgVersion import DpkgVersion
+
 from DefinitionBase import DefinitionBase, Base
 from Download import download
 
@@ -102,12 +104,11 @@ class Package(Base):
                 
 class Apt(DefinitionBase):
     
-    
+    packages = {}
+    status = {}
     supported = ["amd64", "armel", "i386", "ia64", "powerpc", "sparc"]
-    
-
-#    def on___init__(self, database):
-             
+    status_properties = ["Package", "Version", "Status"]
+                 
 
     def on_set_architecture(self, architecture):
         if not architecture in self.supported:
@@ -193,9 +194,8 @@ class Apt(DefinitionBase):
             sys.stdout.write("\rReading package lists... %3i%%" % frac)
             sys.stdout.flush()
 
-            f = gzip.open(filename, "rb")
-
             # Parse packages into dictionary
+            f = gzip.open(filename, "rb")
             self.__parse(repo, f)
             f.close()
             
@@ -208,7 +208,7 @@ class Apt(DefinitionBase):
 
     def __parse(self, repo, f):
         """
-            data - a string of all data in a file (from f.read() for example)
+            Takes a repository and an open file
             
             returns a dictionary will all packages in file
         """
@@ -216,8 +216,11 @@ class Apt(DefinitionBase):
         current = {}
         for line in f:
         
-            if line.startswith("\n") and "Package" in current:
-            
+            # Do we have a filled out package?
+            if line.startswith("\n"):
+                
+                # Attach
+                current["Repository"] = repo
                 if current["Package"] in self.packages:
                     self.packages[current["Package"]].append(current)
                 else:
@@ -225,12 +228,14 @@ class Apt(DefinitionBase):
 
                 current = {}
                     
+            # Do we have a long description?
             elif line.startswith(" ") or line.startswith("\t"):
                 if "Long" in current:
                     current["Long"] += line
                 else:
                     current["Long"] = line
-                    
+
+            # Everything else is a standard property that gets handled the same
             else:
                 try:
                     key, value = line.split(": ", 1)
@@ -240,15 +245,66 @@ class Apt(DefinitionBase):
                     logging.debug(e)
             
 
-#    def on_get_available_binary_packages(self):
-#        pass
+    def on_set_status(self, status="/var/lib/dpkg/status"):
+        """
+            Parses the dpkg status file for package versions, names, and
+            installed statuses.
+        """
+
+        f = open(status, "rb")
         
-
-#    def on_get_available_binary_versions(self, package):
-#        pass
-
-
-#    def on_get_binary_dependencies(self, package):
-#        pass
+        self.status = {}
         
+        current = {}
+        for line in f:
+        
+            if line.startswith("\n") and "Package" in current:
+                self.status[current["Package"]] = current
+                current = {}
+                
+            else:
+                try:
+                    key, value = line.split(": ", 1)
+                    
+                    if key in self.status_properties:
+                        current[key] = value
+                except:
+                    pass
+        
+        f.close()
+        
+        print "%i packages installed" % len(self.status)
+
+
+    def on_get_latest_binary(self, package):
+        """
+            Returns the data for latest version of a package
+        """
+        
+        available = self.get_available_binary_versions(package)
+        
+        # Set the DpkgVersion instance for each package
+        for pkg in available:        
+            pkg["DpkgVersion"] = DpkgVersion(pkg["Version"])
+            
+        # Compare the versions
+        newest = available[0]
+        for pkg in available[1:]:
+            if pkg["DpkgVersion"] > newest["DpkgVersion"]:
+                newest = pkg
+        
+        return newest
+
+
+    def on_get_available_binary_versions(self, package):
+        """
+            Return a list of metadata for all available packages with a
+            matching name
+        """
+        
+        if not package in self.packages:
+            return None
+
+        return self.packages[package]
+
 

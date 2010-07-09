@@ -35,6 +35,8 @@ apt = loader.new_instance("apt", "database.db")
 # Configure the apt client
 apt.set_architecture("amd64")
 
+apt.set_status() # Uses "/var/lib/dpkg/status" as default
+
 apt.set_repositories([
 "deb http://us.archive.ubuntu.com/ubuntu/ lucid main restricted",
 "deb http://us.archive.ubuntu.com/ubuntu/ lucid-updates main restricted",
@@ -52,4 +54,8 @@ apt.set_repositories([
 ])
 
 apt.update()
+
+metadata = apt.get_latest_binary("abiword")
+
+
 

@@ -44,6 +44,7 @@ Set architecture
 Set repos
 Update
  - Not necessary if the database is populated
-Get binary packages
+Packages are marked for download
+Packages are downloaded when ready
 Installation
  - Automatically update status after installation complete

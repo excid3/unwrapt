@@ -62,7 +62,7 @@ apt.get_available_binary_versions("abiword")
 package = apt.get_latest_binary("abiword")
 #print package
 
-# Get a list of dependencies of the package
-apt.get_binary_dependencies(package)
+# Get a list of dependencies of the package and set them all to be installed
+apt.mark_package_to_download(package)
 
 

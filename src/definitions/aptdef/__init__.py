@@ -311,7 +311,7 @@ class Apt(DefinitionBase):
         return self.packages[package]
 
 
-    def on_get_binary_dependencies(self, metadata):
+    def on_mark_package_to_download(self, metadata):
         """
             Get a list of dependencies based on package metadata
         """
@@ -360,15 +360,17 @@ class Apt(DefinitionBase):
             # as a dependency
             if not satisfied:
 
-                #TODO: Mark latest package (if it matches versions)
-                new.append(self.packages[options[0].split()[0]])
+                name = options[0].split(" ", 1)[0]
+                pkg = self.get_latest_binary(name)
+                print name
+                #TODO: Verify pkg's version satisfies
+                new.append(pkg)
+                #self.status[
                 
                 # Mark sub-dependencies as well
-                print "Finding dependencies for %s..." % options[0]
-
-                #TODO: Mark the package status
+                print "Finding dependencies for %s..." % name
                 
-        print new
-        return [metadata] + []
+                
+        return [metadata] + new
         
         

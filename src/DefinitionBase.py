@@ -88,8 +88,13 @@ class DefinitionBase:
         pass
 
 
-    @callback        
-    def get_binary_dependencies(self, metadata):
-        pass
+    #@callback        
+    #def get_binary_dependencies(self, metadata):
+    #    pass
      
+        
+    @callback
+    def mark_package_to_download(self, package):
+        pass
+        
         

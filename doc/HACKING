@@ -1,0 +1,14 @@
+aptdef HACKING
+==============
+
+So you want to improve our apt support do ya? I'm sure it's riddle with holes,
+missing features left and right, but hey now, it works enough. :P 
+
+Apt.packages
+- A dictionary of available packages. Each key is the name of the package, and
+each
+
+Apt.status 
+- a dictionary of package statuses. Each key is the name of the package, and 
+each value contains the data of the installed version and installation status
+

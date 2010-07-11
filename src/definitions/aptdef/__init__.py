@@ -311,7 +311,7 @@ class Apt(DefinitionBase):
         return self.packages[package]
 
 
-    def on_mark_package_to_download(self, metadata):
+    def on_mark_package(self, metadata):
         """
             Get a list of dependencies based on package metadata
         """

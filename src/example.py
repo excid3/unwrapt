@@ -29,8 +29,8 @@ folder = "%s/definitions" % __path__
 # Load definitions from folder
 loader = DefinitionManager(folder)
 
-# Instanciate an apt client
-apt = loader.new_instance("apt", "database.db")
+# Instanciate an apt client with the database in memory
+apt = loader.new_instance("apt", ":memory:")
 
 # Configure the apt client
 apt.set_architecture("amd64")
@@ -63,6 +63,6 @@ package = apt.get_latest_binary("abiword")
 #print package
 
 # Get a list of dependencies of the package and set them all to be installed
-apt.mark_package_to_download(package)
+apt.mark_package(package)
 
 

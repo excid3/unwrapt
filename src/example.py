@@ -30,12 +30,12 @@ folder = "%s/definitions" % __path__
 loader = DefinitionManager(folder)
 
 # Instanciate an apt client with the database in memory
-apt = loader.new_instance("apt", ":memory:")
+apt = loader.load("apt", ":memory:")
 
 # Configure the apt client
 apt.set_architecture("amd64")
 
-apt.set_status() # Uses "/var/lib/dpkg/status" as default
+apt.set_status("/var/lib/dpkg/status")
 
 apt.set_repositories([
 "deb http://us.archive.ubuntu.com/ubuntu/ lucid main restricted",

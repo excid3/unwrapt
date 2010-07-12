@@ -260,6 +260,12 @@ class Apt(DefinitionBase):
             #TODO: DON'T ADD A PACKAGE IF THE STATUS IS SOMETHING OTHER THAN install ok installed
             if line.startswith("\n") and "Package" in current:
                 self.status[current["Package"]] = current
+                
+                # Mark the provides as well for dependency calculation
+                if "Provides" in current:
+                    for provide in current["Provides"].split(", "):
+                        self.status[provide] = current
+                
                 current = {}
                 
             else:

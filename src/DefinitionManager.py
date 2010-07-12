@@ -70,7 +70,7 @@ class DefinitionManager:
             logging.info("Loaded %s" % name)
         
 
-    def new_instance(self, name, *args, **kwargs):
+    def load(self, name, *args, **kwargs):
         """Creates a new instance of a definition
         name - name of the definition to create
         

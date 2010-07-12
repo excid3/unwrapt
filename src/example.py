@@ -56,7 +56,8 @@ apt.set_repositories([
 apt.update()
 
 # Get a list of available versions of a package
-apt.get_available_binary_versions("abiword")
+versions = apt.get_available_binary_versions("abiword")
+#print versions
 
 # Get the newest version of a package
 package = apt.get_latest_binary("abiword")

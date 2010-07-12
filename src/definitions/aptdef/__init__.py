@@ -257,7 +257,7 @@ class Apt(DefinitionBase):
         
         current = {}
         for line in f:
-            #TODO: DON'T ADD A PACKAGE IF THE STATUS IS SOMETHING OTHER THAN install ok installed
+            #TODO: DON'T ADD A PACKAGE IF THE STATUS IS SOMETHING OTHER THAN install ok installed, to install, or to download
             if line.startswith("\n") and "Package" in current:
                 self.status[current["Package"]] = current
                 
@@ -322,7 +322,11 @@ class Apt(DefinitionBase):
             Get a list of dependencies based on package metadata
         """
 
-        new = []
+        # First check if the package is installed already?
+        if metadata["Package"] in self.status:
+            raise AttributeError, "Package already set to status: %s" % \
+                self.status[metadata["Package"]]["Status"]
+
 
         # Build a string of the necessary sections we need
         depends = []
@@ -370,13 +374,10 @@ class Apt(DefinitionBase):
                 pkg = self.get_latest_binary(name)
                 print name
                 #TODO: Verify pkg's version satisfies
-                new.append(pkg)
                 #self.status[
                 
                 # Mark sub-dependencies as well
                 print "Finding dependencies for %s..." % name
                 
-                
-        return [metadata] + new
         
         

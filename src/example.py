@@ -60,10 +60,15 @@ versions = apt.get_available_binary_versions("abiword")
 #print versions
 
 # Get the newest version of a package
-package = apt.get_latest_binary("abiword")
+package = apt.get_latest_binary("firefox")
 #print package
 
 # Get a list of dependencies of the package and set them all to be installed
-apt.mark_package(package)
+# Throws an exception because the package is already installed and has a status
+# Keryx is only good for downloading new packages and updated ones
+try:
+    apt.mark_package(package)
+except AttributeError, e:
+    print e
 
 

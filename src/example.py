@@ -71,4 +71,6 @@ try:
 except AttributeError, e:
     print e
 
+apt.apply_changes()
+
 

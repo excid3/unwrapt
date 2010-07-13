@@ -156,6 +156,13 @@ class Apt(DefinitionBase):
 
 
     def on_update(self, reporthook=None):
+        """
+            This is a missing docstring ZOMG!
+        """
+        
+
+        #TODO: This function obviously needs to be split up and modularized :)
+
         #TODO: When do we clear the repository files and require fresh?
         #      We should use the expires HTTP header and check timestamps
 
@@ -178,7 +185,7 @@ class Apt(DefinitionBase):
             #TODO: pass proxy information and catch exceptions
             #TODO: Support bz2 and unarchived Packages files
             filename = "%s.gz" % filename
-            #download("%s.gz" % url, filename, display_name)
+            download("%s.gz" % url, filename, display_name)
             downloaded.append((repo, filename))
             
             
@@ -322,11 +329,12 @@ class Apt(DefinitionBase):
             Get a list of dependencies based on package metadata
         """
 
+        #TODO: This function obviously needs to be split up and modularized :)
+
         # First check if the package is installed already?
         if metadata["Package"] in self.status:
             raise AttributeError, "Package already set to status: %s" % \
                 self.status[metadata["Package"]]["Status"]
-
 
         # Build a string of the necessary sections we need
         depends = []
@@ -364,8 +372,7 @@ class Apt(DefinitionBase):
                     # No need to test the other options if one is found
                     if satisfied:
                         break
-                        
-                
+                          
             # No package was installed, so take the first one and add it
             # as a dependency
             if not satisfied:
@@ -379,5 +386,4 @@ class Apt(DefinitionBase):
                 # Mark sub-dependencies as well
                 print "Finding dependencies for %s..." % name
                 
-        
         

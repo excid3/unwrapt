@@ -15,7 +15,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
+import os
 import sys
+import time
 import urllib
 
 
@@ -126,38 +128,64 @@ def download(url, filename, display=None, progress=textprogress, proxy={}, usern
     if not display:
         display = url.rsplit("/", 1)[1]
 
-    #TODO: Read the amount of file retrieved and add resume support
-    f = open(filename, "wb")
-    
+    # Do we already have a file to continue off of?
+    # modified determines whether the file is outdated or not based on headers
+    modified = None
+    downloaded = 0
+    if os.path.exists(filename):
+        modified = time.localtime(os.stat(filename).st_mtime)
+        downloaded = os.path.getsize(filename)
+
+    # Open up a temporary connection to see if the file we have downloaded
+    # is still usable (based on modification date)
+    # format meanings are located http://docs.python.org/library/time.html
     opener = ProxyOpener(proxy, username, password)
     page = opener.open(url)
-    
-    length = int(page.headers["Content-Length"])
-    #print page.headers["Last-Modified"]
-    #TODO: Check the headers for Last-Modified and determine the file
-    # modification date to see if we need to download it
-    
-    downloaded = 0
+    if modified and "Last-Modified" in page.headers:
+        dt = time.strptime(page.headers["Last-Modified"],
+                                        "%a, %d %b %Y %H:%M:%S %Z")
+        #TODO: Something is slightly wrong here         
+        # File is too old so we delete the old file 
+        if modified <= dt:
+            logging.debug("OLD FILE")
+            downloaded = 0
+            os.remove(filename)
+    page.close()
+
+
+    # Open up the real connection for downloading
+    opener = ProxyOpener(proxy, username, password)
+    if downloaded:
+        opener.addheader("Range", "bytes=%s-" % str(downloaded))
+    page = opener.open(url)
+
+    # The file range must have matched the download size
+    if not "Content-Length" in page.headers:
+        progress("Hit: %s" % display, downloaded, downloaded)
+        return
+
+    # Finish downloading the file
+    length = int(page.headers["Content-Length"]) + downloaded
+    f = open(filename, "ab")
+
     while 1:
         data = page.read(8192)
-                
         if not data:
             break
-            
         downloaded += len(data)
         f.write(data)
-            
         progress(display, downloaded, length)
-
     f.close()
-#    return f
-    
+    page.close()
 
-#if __name__ == "__main__":
+    return
+
+    
+if __name__ == "__main__":
     # Successful proxy usage
-    #download("http://launchpad.net/keryx/stable/0.92/+download/keryx_0.92.4.zip",
-    #         "keryx.zip",
-    #         proxy={"http": "http://tank:3128"}, 
-    #         username="excid3", password="password")
+    download("http://launchpad.net/keryx/stable/0.92/+download/keryx_0.92.4.zip",
+             "keryx.zip",
+             proxy={"http": "http://tank:3128"}, 
+             username="excid3", password="password")
              
              

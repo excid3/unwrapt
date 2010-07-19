@@ -31,12 +31,12 @@ import logging
 import os
 import sys
 
-from sqlalchemy import Column, ForeignKey, Integer, String
-from sqlalchemy.schema import UniqueConstraint
+#from sqlalchemy import Column, ForeignKey, Integer, String
+#from sqlalchemy.schema import UniqueConstraint
 
 from DpkgVersion import DpkgVersion
 
-from DefinitionBase import DefinitionBase, Base
+from DefinitionBase import DefinitionBase#, Base
 from Download import download
 
 
@@ -57,51 +57,55 @@ def url_join(first, last):
         else:                    return first + '/' + last
 
 
-class Repository(Base):
+#class Repository(Base):
+#
+#
+#    __tablename__ = "apt_repositories"
+#    
+#    id = Column(Integer, primary_key=True)
+#    rtype = Column(String)
+#    url = Column(String)
+#    dist = Column(String)
+#    section = Column(String)
+#
+#    # Only allow completely unique repository entries
+#    __table_args__ = (UniqueConstraint("rtype", "url", "dist", "section"),{})
+#    
+#    
+#    def __init__(self, rtype, url, dist, section):
+#        self.rtype = rtype
+#        self.url = url
+#        self.dist = dist
+#        self.section = section
+#        
+#    
+#    def to_url(self):
+#        return url_join(self.url, url_join("dists", url_join(self.dist, self.section)))
+#    
+#                
+#class Package(Base):
+#
+#
+#    __tablename__ = "apt_packages"
+#    
+#    id = Column(Integer, primary_key=True)
+#    name = Column(String)
+#    version = Column(String)
+#    source = Column(Integer, ForeignKey("apt_repositories.id"))
+#
+#    # Only allow completely unqiue package entries
+#    __table_args__ = (UniqueConstraint("name", "version", "source"))
+#    
+#    
+#    def __init__(self, name, version, source):
+#        self.name = name
+#        self.version = version
+#        self.source = source
 
 
-    __tablename__ = "apt_repositories"
-    
-    id = Column(Integer, primary_key=True)
-    rtype = Column(String)
-    url = Column(String)
-    dist = Column(String)
-    section = Column(String)
+def to_url(repository):
+    return repository["url"]
 
-    # Only allow completely unique repository entries
-    __table_args__ = (UniqueConstraint("rtype", "url", "dist", "section"),{})
-    
-    
-    def __init__(self, rtype, url, dist, section):
-        self.rtype = rtype
-        self.url = url
-        self.dist = dist
-        self.section = section
-        
-    
-    def to_url(self):
-        return url_join(self.url, url_join("dists", url_join(self.dist, self.section)))
-    
-                
-class Package(Base):
-
-
-    __tablename__ = "apt_packages"
-    
-    id = Column(Integer, primary_key=True)
-    name = Column(String)
-    version = Column(String)
-    source = Column(Integer, ForeignKey("apt_repositories.id"))
-
-    # Only allow completely unqiue package entries
-    __table_args__ = (UniqueConstraint("name", "version", "source"))
-    
-    
-    def __init__(self, name, version, source):
-        self.name = name
-        self.version = version
-        self.source = source
-    
             
 class UnsupportedArchitecture(Exception):
     """
@@ -139,10 +143,24 @@ class Apt(DefinitionBase):
         # use in keryx-web. Deleting the Repository entries will force the
         # other projects (who might use the same entry) to recreate it
         
-        for repo in self.__iter_repositories():
-            logging.debug("Using repository %i" % repo.id)
+        #for repo in self.__iter_repositories():
+        #    logging.debug("Using repository %i" % repo.id)
                     
-        self.session.commit()
+        #self.session.commit()
+        self.repositories = {}
+        count = 0
+        for repo in repositories:
+            rtype, url, dist, sections = repo.split(None, 3)
+
+            for section in sections.split():
+                self.repositories[count] = {}
+                self.repositories[count]["rtype"] = rtype
+                self.repositories[count]["url"] = url
+                self.repositories[count]["dist"] = dist
+                self.repositories[count]["section"] = section
+                self.repositories[count]["url"] = url_join(url, url_join("dists", url_join(dist, section)))
+
+                count += 1
 
     
     def __iter_repositories(self):
@@ -150,24 +168,24 @@ class Apt(DefinitionBase):
         This function yields Repository objects and creates entries as needed
         """
         for repo in self.repositories:
-            rtype, url, dist, sections  = repo.split(None, 3)
-            for section in sections.split():
-                try:
-                    repo = self.session.query(Repository) \
-                                  .filter(Repository.rtype == rtype) \
-                                  .filter(Repository.url == url) \
-                                  .filter(Repository.dist == dist) \
-                                  .filter(Repository.section == section) \
-                                  .one()
-                except:
-                    self.session.add(Repository(rtype, url, dist, section))
-                    repo = self.session.query(Repository) \
-                                  .filter(Repository.rtype == rtype) \
-                                  .filter(Repository.url == url) \
-                                  .filter(Repository.dist == dist) \
-                                  .filter(Repository.section == section) \
-                                  .one()
-                yield repo
+    #        rtype, url, dist, sections  = repo.split(None, 3)
+    #        for section in sections.split():
+    #            try:
+    #                repo = self.session.query(Repository) \
+    #                              .filter(Repository.rtype == rtype) \
+    #                              .filter(Repository.url == url) \
+    #                              .filter(Repository.dist == dist) \
+    #                              .filter(Repository.section == section) \
+    #                              .one()
+    #            except:
+    #                self.session.add(Repository(rtype, url, dist, section))
+    #                repo = self.session.query(Repository) \
+    #                              .filter(Repository.rtype == rtype) \
+    #                              .filter(Repository.url == url) \
+    #                              .filter(Repository.dist == dist) \
+    #                              .filter(Repository.section == section) \
+    #                              .one()
+            yield self.repositories[repo]
 
 
     def on_update(self, reporthook=None):
@@ -186,11 +204,11 @@ class Apt(DefinitionBase):
         for repo in self.__iter_repositories():
 
             # Build the strings
-            url = url_join(repo.to_url(), 
+            url = url_join(to_url(repo), 
                            url_join(self.architecture, "Packages"))
             filename = os.path.join("downloads/lists",
                                     url.split("//")[1].replace("/", "_"))
-            display_name = "Repository => %s / %s" % (repo.dist, repo.section)
+            display_name = "Repository => %s / %s" % (repo["dist"], repo["section"])
 
             # If the download directory does not exist, create it
             if not os.path.exists("downloads/lists"):

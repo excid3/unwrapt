@@ -15,12 +15,12 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker
+#from sqlalchemy import create_engine
+#from sqlalchemy.ext.declarative import declarative_base
+#from sqlalchemy.orm import sessionmaker
 
 
-Base = declarative_base()
+#Base = declarative_base()
 
 
 def callback(func):
@@ -69,17 +69,19 @@ class DefinitionBase:
             client = loader.new_instance("apt", "unwrapt.db")
         """
         
-        self.database = database
-        engine = create_engine("sqlite:///%s" % database)
-        Base.metadata.create_all(engine)
+        #self.database = database
+        #engine = create_engine("sqlite:///%s" % database)
+        #Base.metadata.create_all(engine)
         
-        Session = sessionmaker(bind=engine)
-        self.session = Session()
+        #Session = sessionmaker(bind=engine)
+        #self.session = Session()
+	
+        pass
+	
 
-
-    def __del__(self):
-        self.session.commit()
-        self.session.close()
+    #def __del__(self):
+    #    self.session.commit()
+    #    self.session.close()
 
 
     @callback

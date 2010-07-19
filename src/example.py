@@ -71,6 +71,9 @@ try:
 except AttributeError, e:
     print e
 
+package = apt.get_latest_binary("abiword")
+apt.mark_package(package)
+
 apt.apply_changes()
 
 

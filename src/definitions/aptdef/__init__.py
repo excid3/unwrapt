@@ -196,9 +196,6 @@ class Apt(DefinitionBase):
 
         #TODO: This function obviously needs to be split up and modularized :)
 
-        #TODO: When do we clear the repository files and require fresh?
-        #      We should use the expires HTTP header and check timestamps
-
         # This is a list of files we downloaded and now need to parse
         downloaded = []
         for repo in self.__iter_repositories():

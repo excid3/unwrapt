@@ -17,8 +17,9 @@
 
 import os
 import sys
-import time
 import urllib
+
+from datetime import datetime
 
 
 #TODO: Add resume support: http://code.activestate.com/recipes/83208-resuming-download-of-a-file/
@@ -133,7 +134,7 @@ def download(url, filename, display=None, progress=textprogress, proxy={}, usern
     modified = None
     downloaded = 0
     if os.path.exists(filename):
-        modified = time.localtime(os.stat(filename).st_mtime)
+        modified = datetime.utcfromtimestamp(os.stat(filename).st_mtime)
         downloaded = os.path.getsize(filename)
 
     # Open up a temporary connection to see if the file we have downloaded
@@ -142,12 +143,13 @@ def download(url, filename, display=None, progress=textprogress, proxy={}, usern
     opener = ProxyOpener(proxy, username, password)
     page = opener.open(url)
     if modified and "Last-Modified" in page.headers:
-        dt = time.strptime(page.headers["Last-Modified"],
+        dt = datetime.strptime(page.headers["Last-Modified"],
                                         "%a, %d %b %Y %H:%M:%S %Z")
-        #TODO: Something is slightly wrong here         
+       
         # File is too old so we delete the old file 
-        if modified <= dt:
-            logging.debug("OLD FILE")
+        if modified < dt:
+            #logging.debug("OLD FILE")
+            #print "OLD FILE"
             downloaded = 0
             os.remove(filename)
     page.close()

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 #    Unwrapt - cross-platform package system emulator
 #    Copyright (C) 2010 Chris Oliver <chris@excid3.com>
 #
@@ -101,7 +102,21 @@ class Package(Base):
         self.version = version
         self.source = source
     
-                
+            
+class UnsupportedArchitecture(Exception):
+    """
+        Project attempted to use an unsupported architecture type
+    """
+    pass
+
+
+class PackageAlreadySet(Exception):
+    """
+        Package is being marked when it already has a status set
+    """
+    pass
+
+
 class Apt(DefinitionBase):
     
     packages = {}
@@ -112,7 +127,7 @@ class Apt(DefinitionBase):
 
     def on_set_architecture(self, architecture):
         if not architecture in self.supported:
-            raise AttributeError, "Unsupported architecture"
+            raise UnsupportedArchitecture
 
         self.architecture = "binary-%s" % architecture
         

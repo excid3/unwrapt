@@ -332,7 +332,7 @@ class Apt(DefinitionBase):
         # Set the DpkgVersion instance for each package
         for pkg in available:        
             pkg["DpkgVersion"] = DpkgVersion(pkg["Version"])
-            
+
         # Compare the versions
         newest = available[0]
         for pkg in available[1:]:
@@ -365,6 +365,10 @@ class Apt(DefinitionBase):
         if metadata["Package"] in self.status:
             raise AttributeError, "Package already set to status: %s" % \
                 self.status[metadata["Package"]]["Status"]
+        
+        # Mark the package itself
+        metadata["Status"] = "to be downloaded"
+        self.status[metadata["Package"]] = metadata
 
         # Build a string of the necessary sections we need
         depends = []
@@ -387,7 +391,7 @@ class Apt(DefinitionBase):
                 
                 # If any of these packages are already installed
                 if name in self.status:
-                    logging.debug("Dependency %s installed!" % name)
+                    #logging.debug("Dependency %s installed!" % name)
 
                     # Assume installed version will work
                     satisfied = True
@@ -409,11 +413,24 @@ class Apt(DefinitionBase):
 
                 name = options[0].split(" ", 1)[0]
                 pkg = self.get_latest_binary(name)
-                print name
+
                 #TODO: Verify pkg's version satisfies
-                #self.status[
+                #pkg["Status"] = "to be downloaded"
+                #self.status[pkg["Package"]] = pkg
+                #print pkg
                 
                 # Mark sub-dependencies as well
-                print "Finding dependencies for %s..." % name
+                if pkg:
+                    print "Finding dependencies for %s..." % name
+                    self.on_mark_package(pkg)
                 
+                
+    def on_apply_changes(self):
+        count = 0
+        for key, value in self.status.items():
+            if value["Status"] == "to be downloaded":
+                count += 1
+                
+        print "%i packages to be installed" % count
+            
         

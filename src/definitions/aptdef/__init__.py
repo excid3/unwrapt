@@ -241,7 +241,7 @@ class Apt(DefinitionBase):
         sys.stdout.write("\rReading package lists... %3i%%" % 100)
         sys.stdout.write("\n")
         
-        print "%i packages available" % len(self.packages)
+        logging.info("%i packages available" % len(self.packages))
 
     def __parse(self, repo, f):
         """
@@ -316,7 +316,7 @@ class Apt(DefinitionBase):
         
         f.close()
         
-        print "%i packages installed" % len(self.status)
+        logging.info("%i packages installed" % len(self.status))
 
 
     def on_get_latest_binary(self, package):
@@ -421,16 +421,30 @@ class Apt(DefinitionBase):
                 
                 # Mark sub-dependencies as well
                 if pkg:
-                    print "Finding dependencies for %s..." % name
+                    logging.info("Finding dependencies for %s..." % name)
                     self.on_mark_package(pkg)
                 
                 
-    def on_apply_changes(self):
-        count = 0
-        for key, value in self.status.items():
-            if value["Status"] == "to be downloaded":
-                count += 1
+    def on_apply_changes(self, directory="downloads/packages"):
+        
+        # Build the list of package urls to download
+        downloads = [(key, value["Repository"]["url"].split("dists")[0] + value["Filename"]) for key, value in self.status.items() if value["Status"] == "to be downloaded"]
+        
+        #downloads = []
+        #for key, value in self.status.items():
+        #    if value["Status"] == "to be downloaded":
+        #        downloads.append(value["Repository"]["url"].split("dists")[0] + value["Filename"])
                 
-        print "%i packages to be installed" % count
-            
+        logging.info("%i packages to be installed" % len(downloads))
+        
+        # Create the download directory if it doesn't exist
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        
+        # Download the files
+        for key, url in downloads:
+            download(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]))
+            # Once it's downloaded, mark this package status to "to be installed"
+            self.status[key]["Status"] = "to be installed"
+        
         

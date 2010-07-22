@@ -1,2 +1,4 @@
 - Add that TODO list item I forgot to add
 - Include Provides in on_set_status
+- There is a problem with the status format:
+    Using status as a dictionary and making the Provides also listed inside of this means that we have a much larger list of installed packages in comparison to what Synaptic reports. This is fine if our dependency calculations are running perfect. This could be an issue if some real packages are overwritten with a Provides. We will see what happens, but I think it might cause issue later.

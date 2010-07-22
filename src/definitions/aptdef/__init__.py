@@ -370,6 +370,8 @@ class Apt(DefinitionBase):
         metadata["Status"] = "to be downloaded"
         self.status[metadata["Package"]] = metadata
 
+        logging.info("Finding dependencies for %s..." % metadata["Package"])
+
         # Build a string of the necessary sections we need
         depends = []
         for section in self.binary_dependencies:
@@ -421,7 +423,6 @@ class Apt(DefinitionBase):
                 
                 # Mark sub-dependencies as well
                 if pkg:
-                    logging.info("Finding dependencies for %s..." % name)
                     self.on_mark_package(pkg)
                 
                 
@@ -446,5 +447,25 @@ class Apt(DefinitionBase):
             download(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]))
             # Once it's downloaded, mark this package status to "to be installed"
             self.status[key]["Status"] = "to be installed"
+        
+        
+    def on_save_changes(self, status):
+    
+        # This will NOT create a staus file to override /var/lib/dpkg/status
+        # so DO NOT try to replace the system status file.
+        # YOU HAVE BEEN WARNED
+        
+        f = open(status, "wb")
+        
+        for status, package in self.status.items():
+
+            # Try to write these back in the order they were read
+            properties = ["Package", "Status", "Version", "Provides"]
+            lines = ["%s: %s\n" % (key, package[key]) for key in properties if key in package]
+            
+            f.writelines(lines)
+            f.write("\n")
+            
+        f.close()
         
         

@@ -78,4 +78,5 @@ apt.apply_changes()
 
 apt.save_changes("keryx_status")
 
+apt.set_status("keryx_status")
 

@@ -74,6 +74,9 @@ except AttributeError, e:
 package = apt.get_latest_binary("abiword")
 apt.mark_package(package)
 
+size = apt.get_changes_download_size()
+print "Need to get %sB of archives." % size[0]
+
 apt.apply_changes()
 
 apt.save_changes("keryx_status")

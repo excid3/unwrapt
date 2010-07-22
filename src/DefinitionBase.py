@@ -197,6 +197,25 @@ class DefinitionBase:
         
         pass
 
+    
+    @callback
+    def get_binary_version(self, package, version):
+        """
+            get_binary_version(package, version)
+            
+            - package is the name of the package. 
+            - version is the version of the package.
+            
+            This function will return the metadata of a package with matching
+            version or None if it does not exist.
+            
+            For example:
+            
+            metadata = client.get_available_binary_versions("firefox")
+        """
+        
+        pass
+
        
     @callback
     def mark_package(self, package):
@@ -279,4 +298,18 @@ class DefinitionBase:
         
         pass    
         
+    @callback
+    def get_changes_download_size(self):
+        """
+            get_changes_download_size
+            
+            This function will return an approximate amount of bytes that will
+            be downloaded when apply_changes is called.
+            
+            For example:
+            
+            client.get_changes_download_size()
+        """
+        
+        pass
         

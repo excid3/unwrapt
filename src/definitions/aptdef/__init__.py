@@ -38,7 +38,7 @@ from DpkgVersion import DpkgVersion
 
 from DefinitionBase import DefinitionBase#, Base
 from Download import download
-
+from utils import format_number
 
 info = {"name"   : "apt",
         "author" : "Chris Oliver <excid3@gmail.com>",
@@ -342,6 +342,18 @@ class Apt(DefinitionBase):
         return newest
 
 
+    def on_get_binary_version(self, package, version):
+        
+        available = self.get_available_binary_versions(package)
+        
+        # Return the metadata of the package with matching version
+        for package in available:
+            if DpkgVersion(package["Version"]) == version:
+                return package
+        
+        return None
+        
+
     def on_get_available_binary_versions(self, package):
         """
             Return a list of metadata for all available packages with a
@@ -467,5 +479,19 @@ class Apt(DefinitionBase):
             f.write("\n")
             
         f.close()
+        
+        
+    def on_get_changes_download_size(self):
+    
+        # Build list of packages to be installed        
+        packages = [(value["Package"], value["Version"]) for key, value in self.status.items() if value["Status"] == "to be downloaded"]
+
+        total = 0        
+        for name, version in packages:
+            package = self.get_binary_version(name, version)
+            if package:
+                total += int(package["Size"])
+        
+        return (format_number(total), total)
         
         

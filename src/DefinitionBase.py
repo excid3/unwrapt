@@ -56,17 +56,13 @@ class DefinitionBase:
     
     
     @callback
-    def __init__(self, database=":memory:"):
+    def __init__(self):
         """
-            __init__([database])
-            
-            - database is a filename for the defintion data to be stored. If
-              omitted, the database will be stored in memory only and will not
-              be saved.
+            __init__()
               
             For example:
               
-            client = loader.new_instance("apt", "unwrapt.db")
+            client = loader.new_instance("apt")
         """
         
         #self.database = database

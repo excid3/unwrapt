@@ -29,8 +29,8 @@ folder = "%s/definitions" % __path__
 # Load definitions from folder
 loader = DefinitionManager(folder)
 
-# Instanciate an apt client with the database in memory
-apt = loader.load("apt", ":memory:")
+# Instanciate an apt client
+apt = loader.load("apt")
 
 # Configure the apt client
 apt.set_architecture("amd64")

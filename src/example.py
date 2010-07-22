@@ -86,4 +86,9 @@ apt.set_status("keryx_status")
 status = apt.get_package_status("abiword")
 print "abiword is %s" % status
 
+print "Cancelling changes"
+apt.cancel_changes(downloads=True, installs=True)
+
+status = apt.get_package_status("abiword")
+print "abiword is %s" % status
 

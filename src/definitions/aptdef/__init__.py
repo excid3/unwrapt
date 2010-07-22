@@ -492,6 +492,19 @@ class Apt(DefinitionBase):
         f.close()
         
         
+    def on_cancel_changes(self, downloads, installs):
+    
+        cancellations = []
+        
+        for key, value in self.status.items():
+            if downloads and value["Status"] == "to be downloaded" or \
+               installs and value["Status"] == "to be installed":
+               cancellations.append(key)
+               
+        for key in cancellations:
+            del self.status[key]
+        
+        
     def on_get_changes_download_size(self):
     
         # Build list of packages to be installed        

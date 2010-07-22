@@ -301,7 +301,7 @@ class DefinitionBase:
     @callback
     def get_changes_download_size(self):
         """
-            get_changes_download_size
+            get_changes_download_size()
             
             This function will return an approximate amount of bytes that will
             be downloaded when apply_changes is called.
@@ -317,7 +317,7 @@ class DefinitionBase:
     @callback
     def get_package_status(self, package):
         """
-            get_package_status
+            get_package_status()
             
             - package is the name of the package
             
@@ -329,3 +329,22 @@ class DefinitionBase:
         """
         
         pass
+        
+        
+    @callback
+    def cancel_changes(self, downloads, installs):
+        """
+            cancel_changes(downloads, installs)
+            
+            - downloads set to True will cancel any pending package downloads
+            that were marked.
+            
+            -installs set to True will cancel any pending package installations
+            that were marked.
+            
+            This function will remove all pending "to be downloaded" 
+        """
+        
+        pass
+        
+        

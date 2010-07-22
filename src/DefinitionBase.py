@@ -313,3 +313,19 @@ class DefinitionBase:
         
         pass
         
+        
+    @callback
+    def get_package_status(self, package):
+        """
+            get_package_status
+            
+            - package is the name of the package
+            
+            This funciton will return the status of the package requested.
+            
+            For example:
+            
+            client.get_package_status("firefox")
+        """
+        
+        pass

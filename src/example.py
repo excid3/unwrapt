@@ -83,3 +83,7 @@ apt.save_changes("keryx_status")
 
 apt.set_status("keryx_status")
 
+status = apt.get_package_status("abiword")
+print "abiword is %s" % status
+
+

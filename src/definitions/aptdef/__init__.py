@@ -494,4 +494,11 @@ class Apt(DefinitionBase):
         
         return (format_number(total), total)
         
+    
+    def on_get_package_status(self, package):
+
+        if package in self.status:
+            return self.status[package]["Status"]        
+            
+        return "not installed"
         

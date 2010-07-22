@@ -76,4 +76,6 @@ apt.mark_package(package)
 
 apt.apply_changes()
 
+apt.save_changes("keryx_status")
+
 

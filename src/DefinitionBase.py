@@ -242,11 +242,11 @@ class DefinitionBase:
         
         
     @callback
-    def save_status(self, status):
+    def save_changes(self, filename):
         """
-            save_status(status)
+            save_changes(status)
             
-            - status is the filename where the status information will be
+            - filename is the filename where the status information will be
               written.
               
             This function will write the status information to file. This is
@@ -259,7 +259,7 @@ class DefinitionBase:
             
             For example:
             
-            client.save_status("status")
+            client.save_changes("keryx_status")
         """
         
         pass

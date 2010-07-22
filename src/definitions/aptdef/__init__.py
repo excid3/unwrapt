@@ -123,11 +123,22 @@ class PackageAlreadySet(Exception):
 
 class Apt(DefinitionBase):
     
+    proxy = {"proxy": {},
+             "user": None,
+             "pass": None}
+             
     packages = {}
     status = {}
     supported = ["amd64", "armel", "i386", "ia64", "powerpc", "sparc"]
     status_properties = ["Package", "Version", "Status", "Provides"]
     binary_dependencies = ["Pre-Depends", "Depends", "Recommends"]
+
+
+    def on_set_proxy(self, proxy, username=None, password=None):
+        self.proxy = {"proxy": proxy,
+                      "user": username,
+                      "pass": password}
+                      
 
     def on_set_architecture(self, architecture):
         if not architecture in self.supported:
@@ -215,7 +226,7 @@ class Apt(DefinitionBase):
             #TODO: pass proxy information and catch exceptions
             #TODO: Support bz2 and unarchived Packages files
             filename = "%s.gz" % filename
-            download("%s.gz" % url, filename, display_name)
+            download("%s.gz" % url, filename, display_name, proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
             downloaded.append((repo, filename))
             
             
@@ -456,7 +467,7 @@ class Apt(DefinitionBase):
         
         # Download the files
         for key, url in downloads:
-            download(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]))
+            download(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]), proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
             # Once it's downloaded, mark this package status to "to be installed"
             self.status[key]["Status"] = "to be installed"
         
@@ -501,4 +512,5 @@ class Apt(DefinitionBase):
             return self.status[package]["Status"]        
             
         return "not installed"
+        
         

@@ -32,6 +32,9 @@ loader = DefinitionManager(folder)
 # Instanciate an apt client
 apt = loader.load("apt")
 
+# Set proxy and authentication if needed
+#apt.set_proxy({"http": "http://192.168.1.100:3128"}, "username", "password")
+
 # Configure the apt client
 apt.set_architecture("amd64")
 
@@ -86,8 +89,10 @@ apt.set_status("keryx_status")
 status = apt.get_package_status("abiword")
 print "abiword is %s" % status
 
-print "Cancelling changes"
-apt.cancel_changes(downloads=True, installs=True)
+apt.install("downloads/packages")
+
+#print "Cancelling changes"
+#apt.cancel_changes(downloads=True, installs=True)
 
 status = apt.get_package_status("abiword")
 print "abiword is %s" % status

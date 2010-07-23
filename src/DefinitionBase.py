@@ -281,9 +281,11 @@ class DefinitionBase:
         
         
     @callback
-    def install(self, reporthook=None):
+    def install(self, folder, reporthook=None):
         """
-            install(reporthook=None)
+            install(folder, reporthook=None)
+            
+            - folder is the location of the downloaded packages
             
             - reporthook is the name of a function that will report the
               progress of installation.
@@ -297,6 +299,7 @@ class DefinitionBase:
         """
         
         pass    
+        
         
     @callback
     def get_changes_download_size(self):

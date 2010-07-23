@@ -357,10 +357,12 @@ class Apt(DefinitionBase):
         
         available = self.get_available_binary_versions(package)
         
-        # Return the metadata of the package with matching version
-        for package in available:
-            if DpkgVersion(package["Version"]) == version:
-                return package
+        if available:
+            
+            # Return the metadata of the package with matching version
+            for package in available:
+                if DpkgVersion(package["Version"]) == version:
+                    return package
         
         return None
         
@@ -525,5 +527,14 @@ class Apt(DefinitionBase):
             return self.status[package]["Status"]        
             
         return "not installed"
+        
+        
+    def on_install(self, folder, reporthook=None):
+        
+        #for key, value in self.status.items():
+        #    if value["Status"] == "to be installed":
+        #        filename = self.get_binary_version(value["Package"], value["Version"])["Filename"].rsplit("/", 1)[1]
+        
+        pass
         
         

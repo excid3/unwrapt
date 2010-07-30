@@ -139,6 +139,8 @@ class DefinitionBase:
             
             - status is the filename containing the package statuses
             
+            Sets the package statuses from the offline machine
+            
             For example:
             
             client.set_status("/var/lib/dpkg/status")
@@ -147,13 +149,21 @@ class DefinitionBase:
         pass
 
     @callback        
-    def update(self, reporthook=None):
+    def update(self, reporthook=None, directory=None, download=True):
         """
-            update(reporthook=None)
+            update(reporthook=None, directory=None, download=True)
             
             - reporthook is a function name that will be called to report the 
               progress of files as they are being downloaded. If omitted, the
               function will print out progress into the console.
+        
+            - directory is the location to store and read the files from
+            
+            - download is a boolean to determine if files are downloaded or not
+              This is useful for machines that are offline and packages are
+              going to be marked and downloaded later on.
+        
+            Updates the list of available packages
         
             For example:
             
@@ -162,6 +172,20 @@ class DefinitionBase:
         
         pass
 
+        
+    @callback
+    def get_available_package_names(self):
+        """
+            get_available_package_names()
+            
+            Returns a list of package names
+            
+            For example:
+            
+            names = client.get_available_package_names()
+        """
+        
+        pass
         
     @callback
     def get_latest_binary(self, package):

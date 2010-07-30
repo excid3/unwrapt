@@ -34,6 +34,8 @@ import sys
 #from sqlalchemy import Column, ForeignKey, Integer, String
 #from sqlalchemy.schema import UniqueConstraint
 
+sys.path.append(os.path.dirname(__file__))
+
 from DpkgVersion import DpkgVersion
 
 from DefinitionBase import DefinitionBase#, Base

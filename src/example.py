@@ -58,6 +58,8 @@ apt.set_repositories([
 
 apt.update()
 
+#print len(apt.get_available_package_names())
+
 # Get a list of available versions of a package
 versions = apt.get_available_binary_versions("abiword")
 #print versions
@@ -89,11 +91,11 @@ apt.set_status("keryx_status")
 status = apt.get_package_status("abiword")
 print "abiword is %s" % status
 
-apt.install("downloads/packages")
+#apt.install("downloads/packages")
 
 #print "Cancelling changes"
 #apt.cancel_changes(downloads=True, installs=True)
 
-status = apt.get_package_status("abiword")
-print "abiword is %s" % status
+#status = apt.get_package_status("abiword")
+#print "abiword is %s" % status
 

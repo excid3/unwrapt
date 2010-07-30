@@ -230,7 +230,14 @@ class Apt(DefinitionBase):
             filename = "%s.gz" % filename
             if download:
                 download_url("%s.gz" % url, filename, display_name, proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
-            downloaded.append((repo, filename))
+                downloaded.append((repo, filename))
+                
+            #TODO: Improve this. For now we are just opening local files in 
+            # unextracted format (what you find in /var/lib/apt/lists) since
+            # that's an easy way to do things. This won't open the gz files
+            # that Unwrapt downloads however
+            else: # Files that are pre-downloaded
+                downloaded.append((repo, filename[:-3]))
             
             
         self.packages = {}
@@ -246,9 +253,16 @@ class Apt(DefinitionBase):
             sys.stdout.flush()
 
             # Parse packages into dictionary
-            f = gzip.open(filename, "rb")
-            self.__parse(repo, f)
-            f.close()
+            try:
+                if filename.endswith(".gz"):
+                    f = gzip.open(filename, "rb")
+                else:
+                    f = open(filename, "rb")
+    
+                self.__parse(repo, f)
+                f.close()
+            except:
+                pass
             
             #TODO: Insert items into database
 
@@ -472,7 +486,7 @@ class Apt(DefinitionBase):
         
         # Download the files
         for key, url in downloads:
-            download(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]), proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
+            download_url(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]), proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
             # Once it's downloaded, mark this package status to "to be installed"
             self.status[key]["Status"] = "to be installed"
         

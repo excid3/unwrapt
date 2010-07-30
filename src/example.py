@@ -56,6 +56,8 @@ apt.set_repositories([
 "deb http://us.archive.ubuntu.com/ubuntu/ lucid-backports restricted main multiverse universe"
 ])
 
+apt.update(directory="/var/lib/apt/lists", download=False)
+
 apt.update()
 
 #print len(apt.get_available_package_names())

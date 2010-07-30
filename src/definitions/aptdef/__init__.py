@@ -39,7 +39,7 @@ sys.path.append(os.path.dirname(__file__))
 from DpkgVersion import DpkgVersion
 
 from DefinitionBase import DefinitionBase#, Base
-from Download import download
+from Download import download_url
 from utils import format_number
 
 info = {"name"   : "apt",
@@ -229,7 +229,7 @@ class Apt(DefinitionBase):
             #TODO: Support bz2 and unarchived Packages files
             filename = "%s.gz" % filename
             if download:
-                download("%s.gz" % url, filename, display_name, proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
+                download_url("%s.gz" % url, filename, display_name, proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
             downloaded.append((repo, filename))
             
             

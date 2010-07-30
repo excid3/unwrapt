@@ -80,7 +80,7 @@ def textprogress(display, current, total):
     sys.stdout.flush()
 
 
-def download(url, filename, display=None, progress=textprogress, proxy={}, username=None, password=None):
+def download_url(url, filename, display=None, progress=textprogress, proxy={}, username=None, password=None):
     """
         Downloads a file to ram and returns a string of the contents
     """

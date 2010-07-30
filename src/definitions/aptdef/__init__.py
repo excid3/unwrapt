@@ -580,16 +580,20 @@ class Apt(DefinitionBase):
             raise PermissionsError, "You may only install as root"
         
         # Copy lists over
-        for repo in self.__iter_repositories():
-            url = to_url(repo, self.architecture, "Packages")
-            filename = to_filename(os.path.join(directory, "lists"), url)
+        try:
+            for repo in self.__iter_repositories():
+                url = to_url(repo, self.architecture, "Packages")
+                filename = to_filename(os.path.join(directory, "lists"), url)
 
-            # Extract the gz
-            g = gzip.open("%s.gz" % filename, "rb")
-            f = open(os.path.join("/var/lib/apt/lists", os.path.basename(filename)), "wb")
-            f.write(g.read())
-            f.close()
-            g.close()
+                # Extract the gz
+                g = gzip.open("%s.gz" % filename, "rb")
+                f = open(os.path.join("/var/lib/apt/lists", os.path.basename(filename)), "wb")
+                f.write(g.read())
+                f.close()
+                g.close()
+        except IOError, e:
+            # We will just ignore this, it only trip out if the user did download=False on update()
+            pass
 
         
         # Copy packages over

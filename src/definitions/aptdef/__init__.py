@@ -418,6 +418,9 @@ class Apt(DefinitionBase):
             Get a list of dependencies based on package metadata
         """
 
+        if not metadata:
+            raise AttributeError, "You must supply valid package metadata"
+
         #TODO: This function obviously needs to be split up and modularized :)
 
         # First check if the package is installed already?

@@ -56,9 +56,13 @@ apt.set_repositories([
 "deb http://us.archive.ubuntu.com/ubuntu/ lucid-backports restricted main multiverse universe"
 ])
 
-apt.update(directory="/var/lib/apt/lists", download=False)
+print "%i available packages" % len(apt.get_available_package_names())
+
+#apt.update(directory="/var/lib/apt/lists", download=False)
 
 apt.update()
+
+#print "%i available packages" % len(apt.get_available_package_names())
 
 #print len(apt.get_available_package_names())
 
@@ -93,7 +97,7 @@ apt.set_status("keryx_status")
 status = apt.get_package_status("abiword")
 print "abiword is %s" % status
 
-#apt.install("downloads/packages")
+apt.install("downloads")
 
 #print "Cancelling changes"
 #apt.cancel_changes(downloads=True, installs=True)

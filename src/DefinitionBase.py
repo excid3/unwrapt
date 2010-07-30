@@ -305,11 +305,22 @@ class DefinitionBase:
         
         
     @callback
-    def install(self, folder, reporthook=None):
+    def install(self, directory, root="gksu", reporthook=None):
         """
-            install(folder, reporthook=None)
+            install(directory, reporthook=None)
             
-            - folder is the location of the downloaded packages
+            - directory is the location of the downloaded packages and lists.
+              It must have the following folder structure:
+                directory
+                directory/lists
+                directory/packages
+                
+              This guarantees the unwrapt will be able to find both the lists
+              and packages in the subdirectories of 'directory'.
+            
+            - root is the application called to request the user for root
+              access. This is typically "gksu" for graphical users or "sudo"
+              for CLI users.
             
             - reporthook is the name of a function that will report the
               progress of installation.

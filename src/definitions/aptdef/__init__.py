@@ -29,6 +29,8 @@
 import gzip
 import logging
 import os
+import shutil
+import subprocess
 import sys
 
 #from sqlalchemy import Column, ForeignKey, Integer, String
@@ -105,9 +107,20 @@ def url_join(first, last):
 #        self.source = source
 
 
-def to_url(repository):
-    return repository["url"]
+def to_url(repository, architecture, format):
+    return url_join(repository["url"], url_join(architecture, format))
 
+
+def to_filename(directory, url):
+    return os.path.join(directory, url.split("//")[1].replace("/", "_"))
+
+            
+class PermissionsError(Exception):
+    """
+        Unable to run command under current user permissions
+    """
+    pass
+        
             
 class UnsupportedArchitecture(Exception):
     """
@@ -214,10 +227,8 @@ class Apt(DefinitionBase):
         for repo in self.__iter_repositories():
 
             # Build the strings
-            url = url_join(to_url(repo), 
-                           url_join(self.architecture, "Packages"))
-            filename = os.path.join(directory,
-                                    url.split("//")[1].replace("/", "_"))
+            url = to_url(repo, self.architecture, "Packages")
+            filename = to_filename(directory, url)
             display_name = "Repository => %s / %s" % (repo["dist"], repo["section"])
 
             # If the download directory does not exist, create it
@@ -257,12 +268,12 @@ class Apt(DefinitionBase):
                 if filename.endswith(".gz"):
                     f = gzip.open(filename, "rb")
                 else:
-                    f = open(filename, "rb")
-    
+                    f = open(filename, "rb")    
+                    
                 self.__parse(repo, f)
                 f.close()
             except:
-                pass
+                logging.error("\nPackage list does not exist: %s" % filename)
             
             #TODO: Insert items into database
 
@@ -346,6 +357,12 @@ class Apt(DefinitionBase):
         
         logging.info("%i packages installed" % len(self.status))
 
+
+    def on_get_available_package_names(self):
+        if self.packages:
+            return self.packages.keys()
+        return self.status.keys()
+    
 
     def on_get_latest_binary(self, package):
         """
@@ -546,12 +563,45 @@ class Apt(DefinitionBase):
         return "not installed"
         
         
-    def on_install(self, folder, reporthook=None):
+    def on_install(self, directory="downloads", reporthook=None):
+        """
+            We will take the approach of installing by copying the lists to
+            /var/lib/apt/lists and the packages to /var/cache/apt/archives and
+            calling apt-get update and then apt-get install on the packages 
+            which have the stats of "to be installed". This prevents tampering
+            with sources.list and works more or less the exact same if we made
+            a local repository.
+        """
         
-        #for key, value in self.status.items():
-        #    if value["Status"] == "to be installed":
-        #        filename = self.get_binary_version(value["Package"], value["Version"])["Filename"].rsplit("/", 1)[1]
+        if not os.geteuid()==0:    
+            raise PermissionsError, "You may only install as root"
         
-        pass
+        # Copy lists over
+        for repo in self.__iter_repositories():
+            url = to_url(repo, self.architecture, "Packages")
+            filename = to_filename(os.path.join(directory, "lists"), url)
+
+            # Extract the gz
+            g = gzip.open("%s.gz" % filename, "rb")
+            f = open(os.path.join("/var/lib/apt/lists", os.path.basename(filename)), "wb")
+            f.write(g.read())
+            f.close()
+            g.close()
+
+        
+        # Copy packages over
+        for key, value in self.status.items():
+            if value["Status"] == "to be installed":
+                pkg_filename = self.get_binary_version(value["Package"], value["Version"])["Filename"].rsplit("/", 1)[1]
+                filename = os.path.join(directory, os.path.join("packages", pkg_filename))
+                dest = os.path.join("/var/cache/apt/archives", os.path.basename(filename))
+                shutil.copyfile(filename, dest)
+
+                
+        # Call apt-get install with the packages
+        packages = [value["Package"] for key, value in self.status.items() if value["Status"] == "to be installed"]
+        
+        subprocess.call("apt-get update", shell=True)
+        subprocess.call("apt-get -y install %s" % " ".join(packages), shell=True)
         
         

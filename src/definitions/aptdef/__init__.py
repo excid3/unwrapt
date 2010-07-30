@@ -201,7 +201,7 @@ class Apt(DefinitionBase):
             yield self.repositories[repo]
 
 
-    def on_update(self, reporthook=None):
+    def on_update(self, reporthook=None, directory="downloads/lists", download=True):
         """
             This is a missing docstring ZOMG!
         """
@@ -216,19 +216,20 @@ class Apt(DefinitionBase):
             # Build the strings
             url = url_join(to_url(repo), 
                            url_join(self.architecture, "Packages"))
-            filename = os.path.join("downloads/lists",
+            filename = os.path.join(directory,
                                     url.split("//")[1].replace("/", "_"))
             display_name = "Repository => %s / %s" % (repo["dist"], repo["section"])
 
             # If the download directory does not exist, create it
-            if not os.path.exists("downloads/lists"):
-                os.makedirs("downloads/lists")
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
             # Download
             #TODO: pass proxy information and catch exceptions
             #TODO: Support bz2 and unarchived Packages files
             filename = "%s.gz" % filename
-            download("%s.gz" % url, filename, display_name, proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
+            if download:
+                download("%s.gz" % url, filename, display_name, proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
             downloaded.append((repo, filename))
             
             

@@ -78,8 +78,9 @@ except AttributeError, e:
 package = apt.get_latest_binary("abiword")
 apt.mark_package(package)
 
-size = apt.get_changes_download_size()
-print "Need to get %sB of archives." % size[0]
+size = apt.get_changes_size()
+print "%i packages will be downloaded." % size[0]
+print "Need to get %sB of archives." % size[1]
 
 apt.apply_changes()
 
@@ -101,6 +102,6 @@ print "abiword is %s" % status
 count = 0
 for item in apt.get_upgrades():
     count += 1
-    print "%s has a newer version of %s" % (item["Package"], item["Version"])
+    #print "%s has a newer version of %s" % (item["Package"], item["Version"])
 
 print "%i packages upgradable" % count

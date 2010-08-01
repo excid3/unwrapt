@@ -214,11 +214,12 @@ class Apt(DefinitionBase):
             yield self.repositories[repo]
 
 
-    def on_update(self, reporthook=None, directory="downloads/lists", download=True):
+    def on_update(self, reporthook=None, download=True):
         """
             This is a missing docstring ZOMG!
         """
         
+        directory = os.path.join(self.download_directory, "lists")
 
         #TODO: This function obviously needs to be split up and modularized :)
 
@@ -494,7 +495,9 @@ class Apt(DefinitionBase):
                     self.on_mark_package(pkg)
                 
                 
-    def on_apply_changes(self, directory="downloads/packages"):
+    def on_apply_changes(self):
+        
+        directory = os.path.join(self.download_directory, "packages")
         
         # Build the list of package urls to download
         downloads = [(key, value["Repository"]["url"].split("dists")[0] + value["Filename"]) for key, value in self.status.items() if value["Status"] == "to be downloaded"]
@@ -550,18 +553,20 @@ class Apt(DefinitionBase):
             del self.status[key]
         
         
-    def on_get_changes_download_size(self):
+    def on_get_changes_size(self):
     
-        # Build list of packages to be installed        
+        # Build list of packages to be downloaded
         packages = [(value["Package"], value["Version"]) for key, value in self.status.items() if value["Status"] == "to be downloaded"]
 
+        count = 0
         total = 0        
         for name, version in packages:
             package = self.get_binary_version(name, version)
             if package:
                 total += int(package["Size"])
+                count += 1
         
-        return (format_number(total), total)
+        return (count, format_number(total), total)
         
     
     def on_get_package_status(self, package):
@@ -572,7 +577,7 @@ class Apt(DefinitionBase):
         return "not installed"
         
         
-    def on_install(self, directory="downloads", reporthook=None):
+    def on_install(self, reporthook=None):
         """
             We will take the approach of installing by copying the lists to
             /var/lib/apt/lists and the packages to /var/cache/apt/archives and
@@ -589,7 +594,7 @@ class Apt(DefinitionBase):
         try:
             for repo in self.__iter_repositories():
                 url = to_url(repo, self.architecture, "Packages")
-                filename = to_filename(os.path.join(directory, "lists"), url)
+                filename = to_filename(os.path.join(self.download_directory, "lists"), url)
 
                 # Extract the gz
                 g = gzip.open("%s.gz" % filename, "rb")
@@ -606,7 +611,7 @@ class Apt(DefinitionBase):
         for key, value in self.status.items():
             if value["Status"] == "to be installed":
                 pkg_filename = self.get_binary_version(value["Package"], value["Version"])["Filename"].rsplit("/", 1)[1]
-                filename = os.path.join(directory, os.path.join("packages", pkg_filename))
+                filename = os.path.join(self.download_directory, os.path.join("packages", pkg_filename))
                 dest = os.path.join("/var/cache/apt/archives", os.path.basename(filename))
                 shutil.copyfile(filename, dest)
 

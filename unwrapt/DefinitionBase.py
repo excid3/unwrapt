@@ -14,6 +14,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
 
 #from sqlalchemy import create_engine
 #from sqlalchemy.ext.declarative import declarative_base
@@ -54,6 +55,8 @@ class DefinitionBase:
         overridden when implementing a new definition.
     """
     
+    download_directory = "downloads"
+    
     
     @callback
     def __init__(self):
@@ -79,11 +82,23 @@ class DefinitionBase:
     #    self.session.commit()
     #    self.session.close()
 
+    
+    @callback
+    def set_download_directory(self, directory):
+        """
+            set_download_directory(directory)
+            
+            - directory is the location of the 
+        """
+        
+        self.download_directory = os.path.abspath(os.path.expanduser(directory))
+
 
     @callback
     def set_architecture(self, architecture):
         """
             set_architecture(architecture)
+            
             - architecture is the platform architecture of the machine.
               Supported types are amd64, armel, i386, ia64, powerpc, sparc
                
@@ -122,7 +137,7 @@ class DefinitionBase:
             - repositories is a list of "deb url dist section" lines taken
               straight from the machine's sources.list file.
               
-            For example:
+            For example:download_directory 
               
             f = open("/etc/apt/sources.list", "rb")
             client.set_repositories(f.readlines())
@@ -337,16 +352,26 @@ class DefinitionBase:
         
         
     @callback
-    def get_changes_download_size(self):
+    def get_changes_size(self):
         """
             get_changes_download_size()
             
-            This function will return an approximate amount of bytes that will
-            be downloaded when apply_changes is called.
+            This function will return the number of packages that will be 
+            cahnged and an approximate amount of bytes that will be downloaded 
+            when apply_changes is called.
             
             For example:
             
-            client.get_changes_download_size()
+            (number_of_packages, size_text, size_in_bytes) = client.get_changes_download_size()
+            
+            print number_of_packages
+            3
+            
+            print size_text 
+            '3.6 MB'
+            
+            print size_in_bytes
+            3774873
         """
         
         pass

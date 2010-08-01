@@ -105,6 +105,9 @@ print "abiword is %s" % status
 #status = apt.get_package_status("abiword")
 #print "abiword is %s" % status
 
+count = 0
 for item in apt.get_upgrades():
+    count += 1
     print "%s has a newer version of %s" % (item["Package"], item["Version"])
 
+print "%i packages upgradable" % count

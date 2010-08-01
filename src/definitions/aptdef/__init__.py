@@ -630,8 +630,9 @@ class Apt(DefinitionBase):
             latest = self.get_latest_binary(current["Package"])
             
             # Only if there is a version available should we check to see if
-            # there is a newer version
-            if latest and DpkgVersion(latest["Version"]) > DpkgVersion(current["Version"]):
+            # there is a newer version. We also don't want to mark it twice if
+            # the package is already selected for upgrade
+            if latest and latest not in upgrades and DpkgVersion(latest["Version"]) > DpkgVersion(current["Version"]):
                 upgrades.append(latest)
 
         

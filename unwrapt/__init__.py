@@ -14,4 +14,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from DefinitionManager import DefinitionManager
+
+# Make sure this works being launched from any location
+__path__ = os.path.dirname(os.path.abspath(__file__))
+folder = "%s/definitions" % __path__
+
+# Load definitions from folder
+loader = DefinitionManager(folder)

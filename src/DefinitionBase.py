@@ -381,8 +381,27 @@ class DefinitionBase:
             that were marked.
             
             This function will remove all pending "to be downloaded" 
+            
+            For example:
+            
+            client.cancel_changes(downloads=True, installs=True)
         """
         
         pass
         
         
+    @callback
+    def get_upgrades(self):
+        """
+            get_upgrades()
+            
+            Returns a list of package metadata that are newer versions than the
+            ones currently installed. These items can be marked and installed
+            as upgrades.
+            
+            For example:
+            
+            upgrades = client.get_upgrades()
+        """
+        
+        pass

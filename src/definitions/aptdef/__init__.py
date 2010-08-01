@@ -147,7 +147,7 @@ class Apt(DefinitionBase):
     supported = ["amd64", "armel", "i386", "ia64", "powerpc", "sparc"]
     status_properties = ["Package", "Version", "Status", "Provides"]
     binary_dependencies = ["Pre-Depends", "Depends", "Recommends"]
-
+    supported_statuses = ["install ok installed", "to be installed", "to be downloaded"]
 
     def on_set_proxy(self, proxy, username=None, password=None):
         self.proxy = {"proxy": proxy,
@@ -327,24 +327,30 @@ class Apt(DefinitionBase):
             installed statuses.
         """
 
+
         f = open(status, "rb")
         
         self.status = {}
         
         current = {}
         for line in f:
-            #TODO: DON'T ADD A PACKAGE IF THE STATUS IS SOMETHING OTHER THAN install ok installed, to install, or to download
+        
+            # Add package metadata to status
             if line.startswith("\n") and "Package" in current:
-                self.status[current["Package"]] = current
                 
-                # Mark the provides as well for dependency calculation
-                if "Provides" in current:
-                    for provide in current["Provides"].split(", "):
-                        self.status[provide] = current
-                
+                # Only add package if it is a supported status
+                if current["Status"] in self.supported_statuses:
+                    self.status[current["Package"]] = current
+                    
+                    # Mark the provides as well for dependency calculation
+                    if "Provides" in current:
+                        for provide in current["Provides"].split(", "):
+                            self.status[provide] = current
+                    
                 current = {}
                 
             else:
+                # Add property
                 try:
                     key, value = line.split(": ", 1)
                     
@@ -612,3 +618,23 @@ class Apt(DefinitionBase):
         subprocess.call("apt-get -y install %s" % " ".join(packages), shell=True)
         
         
+    def on_get_upgrades(self):
+        
+        upgrades = []
+        
+        # We will only check the installed packages, anything to be downloaded
+        # or installed can wait. We might want to change this in the future.
+        installed = [value for key, value in self.status.items() if value["Status"] == "install ok installed"]
+        
+        for current in installed:
+            latest = self.get_latest_binary(current["Package"])
+            
+            # Only if there is a version available should we check to see if
+            # there is a newer version
+            if latest and DpkgVersion(latest["Version"]) > DpkgVersion(current["Version"]):
+                upgrades.append(latest)
+
+        
+        return upgrades
+        
+

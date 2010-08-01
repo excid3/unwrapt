@@ -97,11 +97,14 @@ apt.set_status("keryx_status")
 status = apt.get_package_status("abiword")
 print "abiword is %s" % status
 
-apt.install("downloads")
+#apt.install("downloads")
 
 #print "Cancelling changes"
 #apt.cancel_changes(downloads=True, installs=True)
 
 #status = apt.get_package_status("abiword")
 #print "abiword is %s" % status
+
+for item in apt.get_upgrades():
+    print "%s has a newer version of %s" % (item["Package"], item["Version"])
 

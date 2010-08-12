@@ -90,6 +90,7 @@ class DefinitionBase:
             
             - directory is the location of the 
         """
+        #FIXME: that docstring.
         
         self.download_directory = os.path.abspath(os.path.expanduser(directory))
 
@@ -163,6 +164,7 @@ class DefinitionBase:
         
         pass
 
+
     @callback        
     def update(self, reporthook=None, directory=None, download=True):
         """
@@ -202,6 +204,7 @@ class DefinitionBase:
         
         pass
         
+
     @callback
     def get_latest_binary(self, package):
         """
@@ -268,7 +271,8 @@ class DefinitionBase:
             
             For example:
             
-            client.mark_package("firefox")
+            package = client.get_latest_binary("firefox")
+            client.mark_package(package)
         """
         
         pass
@@ -289,7 +293,6 @@ class DefinitionBase:
             For example:
             
             client.apply_changes()
-            
         """
         
         pass

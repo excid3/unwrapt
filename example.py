@@ -51,7 +51,10 @@ apt.set_repositories([
 
 print "%i available packages" % len(apt.get_available_package_names())
 
-#apt.update(directory="/var/lib/apt/lists", download=False)
+#FIXME: /var/lib/apt is not the download directory. We should have the ability
+#       to individually specify the download directories.
+#apt.set_download_directory("/var/lib/apt")
+#apt.update(download=False)
 
 apt.update()
 

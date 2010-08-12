@@ -51,14 +51,12 @@ info = {"name"   : "apt",
 
 
 #TODO: Move this code to proper library location
-def url_join(first, last):
+def url_join(*args):
     """ Returns full URL """
-    if first.endswith('/'):
-        if last.startswith('/'): return first + last[1:]
-        else:                    return first + last
-    else:
-        if last.startswith('/'): return first + last
-        else:                    return first + '/' + last
+    # Strip any leading or trailing slashes from the parts.
+    args = [x.strip("/") for x in args]
+
+    return "/".join(args)
 
 
 #class Repository(Base):
@@ -108,10 +106,15 @@ def url_join(first, last):
 
 
 def to_url(repository, architecture, format):
-    return url_join(repository["url"], url_join(architecture, format))
+    return url_join(repository["url"], architecture, format)
 
 
 def to_filename(directory, url):
+    """
+       Forms a full filename from a directory and url.
+       i.e. Strips the url of the protocol prefix, replacse all slashes with 
+       underscores, and appends it to directory.
+    """
     return os.path.join(directory, url.split("//")[1].replace("/", "_"))
 
             
@@ -147,8 +150,13 @@ class Apt(DefinitionBase):
     supported = ["amd64", "armel", "i386", "ia64", "powerpc", "sparc"]
     status_properties = ["Package", "Version", "Status", "Provides"]
     binary_dependencies = ["Pre-Depends", "Depends", "Recommends"]
-    supported_statuses = ["install ok installed", "to be installed", "to be downloaded"]
+    supported_statuses = ["install ok installed", 
+                          "to be downloaded",  
+                          "dependency to be downloaded",
+                          "to be installed", 
+                          "dependency to be installed"]
 
+    #FIXME: This seems redundant. Could it be moved to DefinitionBase?
     def on_set_proxy(self, proxy, username=None, password=None):
         self.proxy = {"proxy": proxy,
                       "user": username,
@@ -184,7 +192,7 @@ class Apt(DefinitionBase):
                 self.repositories[count]["url"] = url
                 self.repositories[count]["dist"] = dist
                 self.repositories[count]["section"] = section
-                self.repositories[count]["url"] = url_join(url, url_join("dists", url_join(dist, section)))
+                self.repositories[count]["url"] = url_join(url, "dists", dist, section)
 
                 count += 1
 
@@ -328,7 +336,6 @@ class Apt(DefinitionBase):
             installed statuses.
         """
 
-
         f = open(status, "rb")
         
         self.status = {}
@@ -420,7 +427,7 @@ class Apt(DefinitionBase):
         return self.packages[package]
 
 
-    def on_mark_package(self, metadata):
+    def on_mark_package(self, metadata, dependency=False):
         """
             Get a list of dependencies based on package metadata
         """
@@ -436,7 +443,8 @@ class Apt(DefinitionBase):
                 self.status[metadata["Package"]]["Status"]
         
         # Mark the package itself
-        metadata["Status"] = "to be downloaded"
+        if not dependency: metadata["Status"] = "to be downloaded"
+        else: metadata["Status"] = "dependency to be downloaded"
         self.status[metadata["Package"]] = metadata
 
         logging.info("Finding dependencies for %s..." % metadata["Package"])
@@ -492,7 +500,7 @@ class Apt(DefinitionBase):
                 
                 # Mark sub-dependencies as well
                 if pkg:
-                    self.on_mark_package(pkg)
+                    self.on_mark_package(pkg, dependency=True)
                 
                 
     def on_apply_changes(self):
@@ -500,7 +508,7 @@ class Apt(DefinitionBase):
         directory = os.path.join(self.download_directory, "packages")
         
         # Build the list of package urls to download
-        downloads = [(key, value["Repository"]["url"].split("dists")[0] + value["Filename"]) for key, value in self.status.items() if value["Status"] == "to be downloaded"]
+        downloads = [(key, value["Repository"]["url"].split("dists")[0] + value["Filename"]) for key, value in self.status.items() if value["Status"] in ["to be downloaded", "dependency to be downloaded"]]
         
         #downloads = []
         #for key, value in self.status.items():
@@ -517,12 +525,16 @@ class Apt(DefinitionBase):
         for key, url in downloads:
             download_url(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]), proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
             # Once it's downloaded, mark this package status to "to be installed"
-            self.status[key]["Status"] = "to be installed"
+            # or "dependency to be installed", depending on what it is now.
+            if self.status[key]["Status"] == "to be downloaded":
+                self.status[key]["Status"] = "to be installed"
+            elif self.status[key]["Status"] == "dependency to be downloaded":
+                self.status[key]["Status"] = "dependency to be installed"
         
         
     def on_save_changes(self, status):
     
-        # This will NOT create a staus file to override /var/lib/dpkg/status
+        # This will NOT create a status file to override /var/lib/dpkg/status
         # so DO NOT try to replace the system status file.
         # YOU HAVE BEEN WARNED
         
@@ -541,22 +553,19 @@ class Apt(DefinitionBase):
         
         
     def on_cancel_changes(self, downloads, installs):
-    
-        cancellations = []
         
         for key, value in self.status.items():
-            if downloads and value["Status"] == "to be downloaded" or \
-               installs and value["Status"] == "to be installed":
-               cancellations.append(key)
-               
-        for key in cancellations:
-            del self.status[key]
+            if downloads and value["Status"] in \
+                    ["to be downloaded", "dependency to be downloaded"] or \
+               installs and value["Status"] in \
+                    ["to be installed", "dependency to be installed"]:
+                del self.status[key]
         
         
     def on_get_changes_size(self):
     
         # Build list of packages to be downloaded
-        packages = [(value["Package"], value["Version"]) for key, value in self.status.items() if value["Status"] == "to be downloaded"]
+        packages = [(value["Package"], value["Version"]) for key, value in self.status.items() if value["Status"] in ["to be downloaded", "dependency to be downloaded"]]
 
         count = 0
         total = 0        
@@ -582,36 +591,36 @@ class Apt(DefinitionBase):
             We will take the approach of installing by copying the lists to
             /var/lib/apt/lists and the packages to /var/cache/apt/archives and
             calling apt-get update and then apt-get install on the packages 
-            which have the stats of "to be installed". This prevents tampering
+            which have the status of "to be installed". This prevents tampering
             with sources.list and works more or less the exact same if we made
             a local repository.
         """
         
-        if not os.geteuid()==0:    
+        if not os.geteuid() == 0:    
             raise PermissionsError, "You may only install as root"
         
         # Copy lists over
-        try:
-            for repo in self.__iter_repositories():
-                url = to_url(repo, self.architecture, "Packages")
-                filename = to_filename(os.path.join(self.download_directory, "lists"), url)
+        for repo in self.__iter_repositories():
+            url = to_url(repo, self.architecture, "Packages")
+            filename = to_filename(os.path.join(self.download_directory, "lists"), url)
 
+            try:
                 # Extract the gz
                 g = gzip.open("%s.gz" % filename, "rb")
                 f = open(os.path.join("/var/lib/apt/lists", os.path.basename(filename)), "wb")
                 f.write(g.read())
                 f.close()
                 g.close()
-        except IOError, e:
-            # We will just ignore this, it only trip out if the user did download=False on update()
-            pass
+            except IOError, e:
+                # We will just ignore this, it only trip out if the user did download=False on update()
+                pass
 
         
         # Copy packages over
         for key, value in self.status.items():
-            if value["Status"] == "to be installed":
+            if value["Status"] in ["to be installed", "dependency to be installed"]:
                 pkg_filename = self.get_binary_version(value["Package"], value["Version"])["Filename"].rsplit("/", 1)[1]
-                filename = os.path.join(self.download_directory, os.path.join("packages", pkg_filename))
+                filename = os.path.join(self.download_directory, "packages", pkg_filename)
                 dest = os.path.join("/var/cache/apt/archives", os.path.basename(filename))
                 shutil.copyfile(filename, dest)
 
@@ -619,6 +628,8 @@ class Apt(DefinitionBase):
         # Call apt-get install with the packages
         packages = [value["Package"] for key, value in self.status.items() if value["Status"] == "to be installed"]
         
+        #FIXME: apt-get update will fail when installing on an offline machine.
+        #       `apt-cache gencaches` should be used.
         subprocess.call("apt-get update", shell=True)
         subprocess.call("apt-get -y install %s" % " ".join(packages), shell=True)
         
@@ -642,5 +653,3 @@ class Apt(DefinitionBase):
 
         
         return upgrades
-        
-

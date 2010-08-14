@@ -33,16 +33,14 @@ import shutil
 import subprocess
 import sys
 
-#from sqlalchemy import Column, ForeignKey, Integer, String
-#from sqlalchemy.schema import UniqueConstraint
+from DefinitionBase import DefinitionBase
+from Download import download_url
+from utils import format_number, to_filename, to_url, url_join
 
-sys.path.append(os.path.dirname(__file__))
 
 from DpkgVersion import DpkgVersion
 
-from DefinitionBase import DefinitionBase#, Base
-from Download import download_url
-from utils import format_number
+
 
 info = {"name"   : "apt",
         "author" : "Chris Oliver <excid3@gmail.com>",
@@ -50,73 +48,9 @@ info = {"name"   : "apt",
         "class"  : "Apt"}
 
 
-#TODO: Move this code to proper library location
-def url_join(*args):
-    """ Returns full URL """
-    # Strip any leading or trailing slashes from the parts.
-    args = [x.strip("/") for x in args]
-
-    return "/".join(args)
-
-
-#class Repository(Base):
-#
-#
-#    __tablename__ = "apt_repositories"
-#    
-#    id = Column(Integer, primary_key=True)
-#    rtype = Column(String)
-#    url = Column(String)
-#    dist = Column(String)
-#    section = Column(String)
-#
-#    # Only allow completely unique repository entries
-#    __table_args__ = (UniqueConstraint("rtype", "url", "dist", "section"),{})
-#    
-#    
-#    def __init__(self, rtype, url, dist, section):
-#        self.rtype = rtype
-#        self.url = url
-#        self.dist = dist
-#        self.section = section
-#        
-#    
-#    def to_url(self):
-#        return url_join(self.url, url_join("dists", url_join(self.dist, self.section)))
-#    
-#                
-#class Package(Base):
-#
-#
-#    __tablename__ = "apt_packages"
-#    
-#    id = Column(Integer, primary_key=True)
-#    name = Column(String)
-#    version = Column(String)
-#    source = Column(Integer, ForeignKey("apt_repositories.id"))
-#
-#    # Only allow completely unqiue package entries
-#    __table_args__ = (UniqueConstraint("name", "version", "source"))
-#    
-#    
-#    def __init__(self, name, version, source):
-#        self.name = name
-#        self.version = version
-#        self.source = source
-
-
-def to_url(repository, architecture, format):
-    return url_join(repository["url"], architecture, format)
-
-
-def to_filename(directory, url):
-    """
-       Forms a full filename from a directory and url.
-       i.e. Strips the url of the protocol prefix, replacse all slashes with 
-       underscores, and appends it to directory.
-    """
-    return os.path.join(directory, url.split("//")[1].replace("/", "_"))
-
+###############################################################################
+# Custom Exceptions
+###############################################################################
             
 class PermissionsError(Exception):
     """
@@ -139,6 +73,10 @@ class PackageAlreadySet(Exception):
     pass
 
 
+###############################################################################
+# The AptDef
+###############################################################################
+
 class Apt(DefinitionBase):
     
     proxy = {"proxy": {},
@@ -155,15 +93,13 @@ class Apt(DefinitionBase):
                           "dependency to be downloaded",
                           "to be installed", 
                           "dependency to be installed"]
-
-    #FIXME: This seems redundant. Could it be moved to DefinitionBase?
-    def on_set_proxy(self, proxy, username=None, password=None):
-        self.proxy = {"proxy": proxy,
-                      "user": username,
-                      "pass": password}
                       
 
     def on_set_architecture(self, architecture):
+        """
+            set architecture
+        """
+        
         if not architecture in self.supported:
             raise UnsupportedArchitecture
 
@@ -171,16 +107,10 @@ class Apt(DefinitionBase):
         
     
     def on_set_repositories(self, repositories):
-        #TODO: if self.repositories
-        #          delete each table entry
-        # This will need to actually find unlinked repository entries for
-        # use in keryx-web. Deleting the Repository entries will force the
-        # other projects (who might use the same entry) to recreate it
+        """
+            set repositories list
+        """
         
-        #for repo in self.__iter_repositories():
-        #    logging.debug("Using repository %i" % repo.id)
-                    
-        #self.session.commit()
         self.repositories = {}
         count = 0
         for repo in repositories:
@@ -192,33 +122,19 @@ class Apt(DefinitionBase):
                 self.repositories[count]["url"] = url
                 self.repositories[count]["dist"] = dist
                 self.repositories[count]["section"] = section
-                self.repositories[count]["url"] = url_join(url, "dists", dist, section)
-
+                self.repositories[count]["url"] = url_join(url,
+                                                           "dists", 
+                                                           dist, 
+                                                           section)
                 count += 1
 
-    
+
     def __iter_repositories(self):
-        """Used for iterating through the repository entries
-        This function yields Repository objects and creates entries as needed
+        """
+            Used for iterating through the repository entries
+            This function yields Repository objects and creates them as needed
         """
         for repo in self.repositories:
-    #        rtype, url, dist, sections  = repo.split(None, 3)
-    #        for section in sections.split():
-    #            try:
-    #                repo = self.session.query(Repository) \
-    #                              .filter(Repository.rtype == rtype) \
-    #                              .filter(Repository.url == url) \
-    #                              .filter(Repository.dist == dist) \
-    #                              .filter(Repository.section == section) \
-    #                              .one()
-    #            except:
-    #                self.session.add(Repository(rtype, url, dist, section))
-    #                repo = self.session.query(Repository) \
-    #                              .filter(Repository.rtype == rtype) \
-    #                              .filter(Repository.url == url) \
-    #                              .filter(Repository.dist == dist) \
-    #                              .filter(Repository.section == section) \
-    #                              .one()
             yield self.repositories[repo]
 
 
@@ -226,13 +142,24 @@ class Apt(DefinitionBase):
         """
             This is a missing docstring ZOMG!
         """
+
+        if download:
+            self._download_lists(reporthook)
+
+        self._read_lists()
+
+
+    def _download_lists(self, reporthook=None):
+        """
+            on_update helper function
+        """
         
         directory = os.path.join(self.download_directory, "lists")
 
-        #TODO: This function obviously needs to be split up and modularized :)
+        # If the download directory does not exist, create it
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
-        # This is a list of files we downloaded and now need to parse
-        downloaded = []
         for repo in self.__iter_repositories():
 
             # Build the strings
@@ -240,31 +167,41 @@ class Apt(DefinitionBase):
             filename = to_filename(directory, url)
             display_name = "Repository => %s / %s" % (repo["dist"], repo["section"])
 
-            # If the download directory does not exist, create it
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-
             # Download
             #TODO: pass proxy information and catch exceptions
             #TODO: Support bz2 and unarchived Packages files
             filename = "%s.gz" % filename
-            if download:
-                download_url("%s.gz" % url, filename, display_name, proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
-                downloaded.append((repo, filename))
-                
-            #TODO: Improve this. For now we are just opening local files in 
-            # unextracted format (what you find in /var/lib/apt/lists) since
-            # that's an easy way to do things. This won't open the gz files
-            # that Unwrapt downloads however
-            else: # Files that are pre-downloaded
-                downloaded.append((repo, filename[:-3]))
+            download_url("%s.gz" % url, 
+                         filename, 
+                         display_name, 
+                         proxy=self.proxy["proxy"], 
+                         username=self.proxy["user"], 
+                         password=self.proxy["pass"])
+
+
+    def _build_lists(self, directory, lists=[]):
+        # Build the strings
+        for repo in self.__iter_repositories():
+            url = to_url(repo, self.architecture, "Packages")
+            filename = to_filename(directory, url)
+            filename = "%s.gz" % filename  # Works only if the index files are gz
+            lists.append((repo, filename))
             
-            
-        self.packages = {}
+        return lists
+
+
+
+    def _read_lists(self):
+        """
+            on_update helper function
+        """
+        
+        self.packages = {}        
+        lists = self._build_lists(os.path.join(self.download_directory, "lists"))
+        total = len(lists)            
  
-        total = len(downloaded)
         # Now parse each file, extracting as necessary
-        for i, value in enumerate(downloaded):
+        for i, value in enumerate(lists):
             repo, filename = value
 
             # Display percent read            
@@ -272,24 +209,24 @@ class Apt(DefinitionBase):
             sys.stdout.write("\rReading package lists... %3i%%" % frac)
             sys.stdout.flush()
 
-            # Parse packages into dictionary
+            # Attempt to open the package list.
             try:
                 if filename.endswith(".gz"):
                     f = gzip.open(filename, "rb")
                 else:
-                    f = open(filename, "rb")    
-                    
-                self.__parse(repo, f)
-                f.close()
-            except:
-                logging.error("\nPackage list does not exist: %s" % filename)
-            
-            #TODO: Insert items into database
+                    f = open(filename, "rb")   
+            except:  #FIXME: specify exception.
+                logging.error("\nPackage list does not exist: %s" % filename) 
+                continue
+
+            # Parse packages into dictionary
+            self.__parse(repo, f)
+            f.close()
 
         sys.stdout.write("\rReading package lists... %3i%%" % 100)
         sys.stdout.write("\n")
-        
         logging.info("%i packages available" % len(self.packages))
+        
 
     def __parse(self, repo, f):
         """
@@ -438,9 +375,9 @@ class Apt(DefinitionBase):
         #TODO: This function obviously needs to be split up and modularized :)
 
         # First check if the package is installed already?
-        if metadata["Package"] in self.status:
-            raise AttributeError, "Package already set to status: %s" % \
-                self.status[metadata["Package"]]["Status"]
+        status = self.on_get_package_status(metadata["Package"])
+        if status != "not installed":
+            raise AttributeError, "Package already set to status: %s" % status
         
         # Mark the package itself
         if not dependency: metadata["Status"] = "to be downloaded"
@@ -449,15 +386,10 @@ class Apt(DefinitionBase):
 
         logging.info("Finding dependencies for %s..." % metadata["Package"])
 
-        # Build a string of the necessary sections we need
-        depends = []
-        for section in self.binary_dependencies:
-            if section in metadata:
-                depends.append(metadata[section])
-        depends = ", ".join(depends)
+        depends = self.on_get_package_dependencies(metadata)
         
         # Do the dependency calculations
-        for dep in depends.split(", "):
+        for dep in depends:
             
             # In case we have some ORs
             options = dep.split(" | ")
@@ -478,7 +410,7 @@ class Apt(DefinitionBase):
                     # Test for compatible version just in case
                     if len(details) > 1:
                         comparison = details[1][1:] # strip the '('
-                        version = details [2][:-1] # strip the ')'
+                        version = details[2][:-1] # strip the ')'
                         
                         satisfied = DpkgVersion(self.status[name]["Version"]).compare_string(comparison, version)
                         
@@ -501,8 +433,19 @@ class Apt(DefinitionBase):
                 # Mark sub-dependencies as well
                 if pkg:
                     self.on_mark_package(pkg, dependency=True)
-                
-                
+
+
+    def on_get_package_dependencies(self, metadata):
+
+        # Build a string of the necessary sections we need
+        depends = []
+        for section in self.binary_dependencies:
+            if section in metadata:
+                depends += metadata[section].split(", ")
+
+        return depends
+
+
     def on_apply_changes(self):
         
         directory = os.path.join(self.download_directory, "packages")
@@ -628,9 +571,7 @@ class Apt(DefinitionBase):
         # Call apt-get install with the packages
         packages = [value["Package"] for key, value in self.status.items() if value["Status"] == "to be installed"]
         
-        #FIXME: apt-get update will fail when installing on an offline machine.
-        #       `apt-cache gencaches` should be used.
-        subprocess.call("apt-get update", shell=True)
+        subprocess.call("apt-cache gencaches", shell=True)
         subprocess.call("apt-get -y install %s" % " ".join(packages), shell=True)
         
         

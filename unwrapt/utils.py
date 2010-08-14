@@ -14,6 +14,29 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
+
+def url_join(*args):
+    """ Returns full URL """
+    # Strip any leading or trailing slashes from the parts.
+    args = [x.strip("/") for x in args]
+
+    return "/".join(args)
+
+
+def to_url(repository, architecture, format):
+    return url_join(repository["url"], architecture, format)
+
+
+def to_filename(directory, url):
+    """
+       Forms a full filename from a directory and url.
+       i.e. Strips the url of the protocol prefix, replaces all slashes with 
+       underscores, and appends it to directory.
+    """
+    return os.path.join(directory, url.split("//")[1].replace("/", "_"))
+
 
 def format_number(number, SI=0, space=' '):
     """

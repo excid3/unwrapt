@@ -30,6 +30,7 @@ apt = loader.load("apt")
 
 # Configure the apt client
 apt.set_architecture("amd64")
+#apt.set_architecture("i386")
 
 apt.set_status("/var/lib/dpkg/status")
 
@@ -43,13 +44,13 @@ apt.set_repositories([
 "deb http://security.ubuntu.com/ubuntu lucid-security main restricted",
 "deb http://security.ubuntu.com/ubuntu lucid-security universe",
 "deb http://security.ubuntu.com/ubuntu lucid-security multiverse",
-"deb http://archive.canonical.com/ lucid partner",
-"deb http://download.virtualbox.org/virtualbox/debian lucid non-free",
-"deb http://us.archive.ubuntu.com/ubuntu/ lucid-proposed restricted main multiverse universe",
-"deb http://us.archive.ubuntu.com/ubuntu/ lucid-backports restricted main multiverse universe"
+#"deb http://archive.canonical.com/ lucid partner",
+#"deb http://download.virtualbox.org/virtualbox/debian lucid non-free",
+#"deb http://us.archive.ubuntu.com/ubuntu/ lucid-proposed restricted main multiverse universe",
+#"deb http://us.archive.ubuntu.com/ubuntu/ lucid-backports restricted main multiverse universe"
 ])
 
-print "%i available packages" % len(apt.get_available_package_names())
+print "%i available packages before reading lists" % len(apt.get_available_package_names())
 
 #FIXME: /var/lib/apt is not the download directory. We should have the ability
 #       to individually specify the download directories.
@@ -76,7 +77,7 @@ package = apt.get_latest_binary("firefox")
 try:
     apt.mark_package(package)
 except AttributeError, e:
-    print e
+    print "%s: %s" % (package["Package"], e)
 
 package = apt.get_latest_binary("abiword")
 apt.mark_package(package)
@@ -85,26 +86,25 @@ size = apt.get_changes_size()
 print "%i packages will be downloaded." % size[0]
 print "Need to get %sB of archives." % size[1]
 
-apt.apply_changes()
+#apt.apply_changes()
 
-apt.save_changes("keryx_status")
+#apt.save_changes("keryx_status")
+#apt.set_status("keryx_status")
 
-apt.set_status("keryx_status")
-
-status = apt.get_package_status("abiword")
-print "abiword is %s" % status
+status = apt.get_package_status("vlc")
+print "vlc is %s" % status
 
 #apt.install("downloads")
 
 #print "Cancelling changes"
 #apt.cancel_changes(downloads=True, installs=True)
 
-#status = apt.get_package_status("abiword")
-#print "abiword is %s" % status
+status = apt.get_package_status("abiword")
+print "abiword is %s" % status
 
 count = 0
 for item in apt.get_upgrades():
     count += 1
-    #print "%s has a newer version of %s" % (item["Package"], item["Version"])
+    print "%s has a newer version of %s" % (item["Package"], item["Version"])
 
 print "%i packages upgradable" % count

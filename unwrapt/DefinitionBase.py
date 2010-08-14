@@ -127,7 +127,9 @@ class DefinitionBase:
 
         """
 
-        pass
+        self.proxy = {"proxy": proxy,
+                      "user": username,
+                      "pass": password}
     
     
     @callback

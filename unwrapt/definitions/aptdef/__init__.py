@@ -34,7 +34,7 @@ import subprocess
 import sys
 
 from DefinitionBase import DefinitionBase
-from Download import download_url
+from Download import download_url, textprogress
 from utils import format_number, to_filename, to_url, url_join
 
 from DpkgVersion import DpkgVersion
@@ -111,7 +111,10 @@ class Apt(DefinitionBase):
         
         self.repositories = []
         for repo in repositories:
-            rtype, url, dist, sections = repo.split(None, 3)
+            if repo.startswith("#"):
+                rtype, url, dist, sections = (repo, "", "", "")
+            else:
+                rtype, url, dist, sections = repo.split(None, 3)
 
             for section in sections.split():
                 r = {}
@@ -130,7 +133,8 @@ class Apt(DefinitionBase):
             This function yields Repository objects and creates them as needed
         """
         for repo in self.repositories:
-            yield repo
+            if repo["rtype"] == "deb":
+                yield repo
 
 
     def on_update(self, reporthook=None, download=True):
@@ -148,6 +152,9 @@ class Apt(DefinitionBase):
         """
             on_update helper function
         """
+        
+        if not reporthook:
+            reporthook = textprogress
         
         directory = os.path.join(self.download_directory, "lists")
 
@@ -169,6 +176,7 @@ class Apt(DefinitionBase):
             download_url("%s.gz" % url, 
                          filename, 
                          display_name, 
+                         progress=reporthook,
                          proxy=self.proxy["proxy"], 
                          username=self.proxy["user"], 
                          password=self.proxy["pass"])
@@ -305,9 +313,7 @@ class Apt(DefinitionBase):
 
 
     def on_get_available_package_names(self):
-        if self.packages:
-            return self.packages.keys()
-        return self.status.keys()
+        return self.packages.keys()
     
 
     def on_get_latest_binary(self, package):

@@ -37,9 +37,7 @@ from DefinitionBase import DefinitionBase
 from Download import download_url
 from utils import format_number, to_filename, to_url, url_join
 
-
 from DpkgVersion import DpkgVersion
-
 
 
 info = {"name"   : "apt",
@@ -111,22 +109,19 @@ class Apt(DefinitionBase):
             set repositories list
         """
         
-        self.repositories = {}
-        count = 0
+        self.repositories = []
         for repo in repositories:
             rtype, url, dist, sections = repo.split(None, 3)
 
             for section in sections.split():
-                self.repositories[count] = {}
-                self.repositories[count]["rtype"] = rtype
-                self.repositories[count]["url"] = url
-                self.repositories[count]["dist"] = dist
-                self.repositories[count]["section"] = section
-                self.repositories[count]["url"] = url_join(url,
-                                                           "dists", 
-                                                           dist, 
-                                                           section)
-                count += 1
+                r = {}
+                r["rtype"] = rtype
+                r["url"] = url
+                r["dist"] = dist
+                r["section"] = section
+                r["url"] = url_join(url, "dists", dist, section)
+
+                self.repositories.append(r)
 
 
     def __iter_repositories(self):
@@ -135,7 +130,7 @@ class Apt(DefinitionBase):
             This function yields Repository objects and creates them as needed
         """
         for repo in self.repositories:
-            yield self.repositories[repo]
+            yield repo
 
 
     def on_update(self, reporthook=None, download=True):
@@ -168,7 +163,7 @@ class Apt(DefinitionBase):
             display_name = "Repository => %s / %s" % (repo["dist"], repo["section"])
 
             # Download
-            #TODO: pass proxy information and catch exceptions
+            #TODO: catch exceptions
             #TODO: Support bz2 and unarchived Packages files
             filename = "%s.gz" % filename
             download_url("%s.gz" % url, 
@@ -180,6 +175,7 @@ class Apt(DefinitionBase):
 
 
     def _build_lists(self, directory, lists=[]):
+
         # Build the strings
         for repo in self.__iter_repositories():
             url = to_url(repo, self.architecture, "Packages")
@@ -188,7 +184,6 @@ class Apt(DefinitionBase):
             lists.append((repo, filename))
             
         return lists
-
 
 
     def _read_lists(self):
@@ -232,7 +227,7 @@ class Apt(DefinitionBase):
         """
             Takes a repository and an open file
             
-            returns a dictionary will all packages in file
+            returns a dictionary with all packages in file
         """
         
         current = {}
@@ -412,7 +407,8 @@ class Apt(DefinitionBase):
                         comparison = details[1][1:] # strip the '('
                         version = details[2][:-1] # strip the ')'
                         
-                        satisfied = DpkgVersion(self.status[name]["Version"]).compare_string(comparison, version)
+                        satisfied = DpkgVersion(self.status[name]["Version"]). \
+                                            compare_string(comparison, version)
                         
                     # No need to test the other options if one is found
                     if satisfied:
@@ -451,7 +447,9 @@ class Apt(DefinitionBase):
         directory = os.path.join(self.download_directory, "packages")
         
         # Build the list of package urls to download
-        downloads = [(key, value["Repository"]["url"].split("dists")[0] + value["Filename"]) for key, value in self.status.items() if value["Status"] in ["to be downloaded", "dependency to be downloaded"]]
+        downloads = [(key, value["Repository"]["url"].split("dists")[0] + value["Filename"]) \
+                     for key, value in self.status.items() \
+                     if value["Status"] in ["to be downloaded", "dependency to be downloaded"]]
         
         #downloads = []
         #for key, value in self.status.items():
@@ -466,7 +464,11 @@ class Apt(DefinitionBase):
         
         # Download the files
         for key, url in downloads:
-            download_url(url, "%s/%s" % (directory, url.rsplit("/", 1)[1]), proxy=self.proxy["proxy"], username=self.proxy["user"], password=self.proxy["pass"])
+            download_url(url, 
+                         "%s/%s" % (directory, url.rsplit("/", 1)[1]), 
+                         proxy=self.proxy["proxy"], 
+                         username=self.proxy["user"], 
+                         password=self.proxy["pass"])
             # Once it's downloaded, mark this package status to "to be installed"
             # or "dependency to be installed", depending on what it is now.
             if self.status[key]["Status"] == "to be downloaded":
@@ -508,7 +510,9 @@ class Apt(DefinitionBase):
     def on_get_changes_size(self):
     
         # Build list of packages to be downloaded
-        packages = [(value["Package"], value["Version"]) for key, value in self.status.items() if value["Status"] in ["to be downloaded", "dependency to be downloaded"]]
+        packages = [(value["Package"], value["Version"]) \
+                    for key, value in self.status.items() \
+                    if value["Status"] in ["to be downloaded", "dependency to be downloaded"]]
 
         count = 0
         total = 0        
@@ -592,5 +596,4 @@ class Apt(DefinitionBase):
             if latest and latest not in upgrades and DpkgVersion(latest["Version"]) > DpkgVersion(current["Version"]):
                 upgrades.append(latest)
 
-        
         return upgrades

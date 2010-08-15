@@ -69,7 +69,6 @@ versions = apt.get_available_binary_versions("abiword")
 
 # Get the newest version of a package
 package = apt.get_latest_binary("firefox")
-#print package
 
 # Get a list of dependencies of the package and set them all to be installed
 # Throws an exception because the package is already installed and has a status

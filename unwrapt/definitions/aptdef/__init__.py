@@ -69,6 +69,13 @@ class PackageAlreadySet(Exception):
         Package is being marked when it already has a status set
     """
     pass
+    
+
+class InvalidRepository(Exception):
+    """
+        A repository string was passed that is invalid or not supported
+    """
+    pass
 
 
 ###############################################################################
@@ -111,10 +118,11 @@ class Apt(DefinitionBase):
         
         self.repositories = []
         for repo in repositories:
-            if repo.startswith("#"):
-                rtype, url, dist, sections = (repo, "", "", "")
-            else:
+            try:
                 rtype, url, dist, sections = repo.split(None, 3)
+            except:
+                raise InvalidRepository, \
+                    "Repository is either invalid or not supported: %s" % repo
 
             for section in sections.split():
                 r = {}
